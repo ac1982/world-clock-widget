@@ -29,6 +29,9 @@ targets:
     info:
       path: Sources/App/Info.plist
       properties:
+        # LaunchServices must suppress the Dock tile before widget URLs reach the delegate.
+        # Explicit editor launches promote the app to .regular in showEditor().
+        LSUIElement: true
         CFBundleURLTypes:
           - CFBundleURLName: com.ac1982.worldclock.cities
             CFBundleURLSchemes: [worldclock]

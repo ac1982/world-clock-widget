@@ -68,3 +68,26 @@ Verified on the installed small widget:
 The regression suite now contains 45 passing tests, including rejection of display-only URLs as editor requests.
 macOS may briefly start the host to deliver the URL; this change prevents automatic editor presentation and
 continued host residency, rather than claiming that the OS never starts a process.
+
+## Dock-flash correction
+
+The previous passive-click build still launched as a regular app, so its icon could appear in the Dock before
+the URL handler exited. The host now declares `LSUIElement = true` in its built Info.plist. It promotes itself
+to a regular Dock app only when presenting the editor. The compiled metadata check enforces this startup flag.
+
+Double-click testing also reproduced URL delivery **after** `applicationDidFinishLaunching`. The notification
+reported `launchIsDefaultUserInfoKey = false`; treating the lack of an earlier URL as an ordinary launch had
+incorrectly opened the editor. The launch callback now checks that system-provided flag.
+
+Installed Release verification on the small desktop widget:
+
+- Single, double and top/left edge clicks kept the host at `.accessory` (no Dock tile), with no transition to
+  `.regular`, as observed through `NSRunningApplication` launch/policy monitoring.
+- No host process remained after these interactions; no editor presentation was recorded by temporary diagnostics.
+- Explicit app launch displayed the searchable editor and promoted the host to `.regular` as intended.
+- Right-click **Edit “World Clock”** still displayed the native configuration panel.
+- Los Angeles remained selected and advanced from 07:33 to 07:34 during verification.
+- XCTest: **45 passed, 0 failed**. Release build and compiled launch/intent metadata checks passed.
+
+The temporary logging and external process monitor are not part of the shipped app. These checks establish
+the Dock behavior for this local macOS installation; macOS still briefly starts the host to deliver widget URLs.

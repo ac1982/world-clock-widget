@@ -30,7 +30,12 @@ flowchart LR
   Atomic replacement prevents partial documents but is not a general concurrent multi-writer transaction.
 - Ordinary widget clicks use `worldclock://display`. AppKit owns window creation, so this route is consumed
   without creating an editor or initializing its model. A host launched solely for this route exits immediately.
-  macOS can still briefly launch the host; this is not a promise of zero process activity on a click.
+  `LSUIElement = true` makes LaunchServices start the host without a Dock tile. Only `showEditor` promotes it
+  to `.regular`. Setting the policy after launch would be too late to prevent the initial Dock flash.
+  URL delivery can follow `applicationDidFinishLaunching`, especially on double-clicks. That callback must
+  check `NSApplication.launchIsDefaultUserInfoKey` before treating a launch as an explicit editor request;
+  the absence of an already-received URL alone is insufficient.
+  macOS can still briefly launch the host; this prevents Dock presentation, not all process activity on a click.
   Explicitly opening the app still shows its editor. Right-click **Edit Widget** remains macOS's native configuration UI.
 - `EditorRoute` carries size, ordered IDs and source for explicit or legacy editor links. Old links without a source are accepted as app links.
   Independent-widget routes are read-only in the app because the app cannot rewrite an installed instance's
@@ -77,3 +82,5 @@ English/Chinese and light/dark modes. Actual desktop checks remain required for 
 dynamic time-zone behavior, monochrome rendering, passive clicks and explicit editor launch.
 
 Apple documents the default widget-to-app launch behavior in [Linking to specific app scenes](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity).
+The startup policy follows Apple's [LSUIElement](https://developer.apple.com/documentation/bundleresources/information-property-list/lsuielement)
+and [default-launch notification key](https://developer.apple.com/documentation/appkit/nsapplication/launchisdefaultuserinfokey) documentation.

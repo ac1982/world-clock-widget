@@ -10,8 +10,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var receivedURL = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // AppKit delivers launch URLs before this callback. Normal app launches still show the editor.
-        if !receivedURL { showEditor() }
+        let isDefaultLaunch = notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true
+        // Widget URLs can arrive after this callback. Only a default launch requests an editor.
+        if !receivedURL && isDefaultLaunch { showEditor() }
     }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
@@ -37,6 +38,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     private func showEditor(url: URL? = nil) {
+        // Start as an agent (LSUIElement) so passive widget launches never flash in the Dock.
+        // Only an explicit editor request promotes the app to a normal Dock application.
         NSApplication.shared.setActivationPolicy(.regular)
         if editor == nil {
             editor = CityEditorModel(repository: JSONSelectionRepository()) {

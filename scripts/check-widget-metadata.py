@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Check the compiled parameter schema, which direct intent unit tests cannot cover."""
+"""Check compiled launch policy and parameter schema, outside direct intent unit tests."""
 import json
+import plistlib
 import sys
 from pathlib import Path
 
 app = Path(sys.argv[1])
+info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
+assert info.get("LSUIElement") is True, "Host must launch as an agent to avoid Dock flashes on widget clicks"
+print("App metadata: Dock-free agent launch verified")
 metadata = app / "Contents/PlugIns/WorldClockWidget.appex/Contents/Resources/Metadata.appintents/extract.actionsdata"
 data = json.loads(metadata.read_text())
 parameters = {

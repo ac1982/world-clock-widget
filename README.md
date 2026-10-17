@@ -35,7 +35,8 @@ and installs the app at `~/Applications/WorldClock.app`. Local builds are ad-hoc
 an Apple Developer account is not required for this configuration.
 
 Right-click the desktop → **Edit Widgets…** → search **World Clock**, then add a size.
-Ordinary clicks on a widget do not open the city selector. To edit the widget, right-click it and choose
+Ordinary clicks on a widget do not open the city selector or flash an app icon in the Dock.
+To edit the widget, right-click it and choose
 **Edit “World Clock”**. Disable **Use app selection** to choose cities directly for that widget.
 To edit shared lists with the larger searchable editor, explicitly open World Clock from Applications,
 select cities, and choose **Apply to widgets**.
