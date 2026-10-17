@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Right half of the editor: a live widget preview and the ordered list of chosen cities.
+/// Right half of the editor: the real widget preview, the ordered chosen cities, and Apply.
 struct CitySelectionView: View {
     let model: CityEditorModel
     let date: Date
@@ -8,63 +8,67 @@ struct CitySelectionView: View {
     private var zh: Bool { locale.prefersChinese }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                EditorSectionTitle(zh ? "小组件预览" : "WIDGET PREVIEW")
-                Spacer()
-                Text("\(model.selected.count) / \(model.size.capacity)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-            }
+        VStack(alignment: .leading, spacing: 14) {
             preview
-
             HStack {
-                EditorSectionTitle(zh ? "已选城市" : "YOUR CITIES")
+                EditorSectionTitle(zh ? "已选城市 · 拖动排序" : "YOUR CITIES · DRAG TO REORDER")
                 Spacer()
-                Text(zh ? "拖动调整顺序" : "Drag to reorder").font(.caption2).foregroundStyle(.tertiary)
+                Text("\(model.selected.count) / \(model.size.capacity)")
+                    .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
             }
             ScrollView {
-                VStack(spacing: 5) {
+                VStack(spacing: 4) {
                     ForEach(Array(model.cities.enumerated()), id: \.element.id) { index, city in
-                        selectedRow(city, isFirst: index == 0)
+                        selectedRow(city, position: index + 1)
                     }
                 }
-            }.scrollIndicators(.hidden)
+            }
+            .scrollIndicators(.hidden)
             if model.selected.isEmpty {
                 Text(zh ? "从左侧选择一个城市" : "Choose a city on the left")
-                    .foregroundStyle(.secondary).frame(maxWidth: .infinity)
+                    .font(.callout).foregroundStyle(.secondary).frame(maxWidth: .infinity)
             }
+            Text(zh ? "用于未在“编辑小组件”中选择城市的同尺寸小组件。" : "Used by this size’s widgets with no cities picked in Edit Widget.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            EditorFooter(model: model)
         }
-        .padding(24)
+        .padding(16)
     }
 
-    /// The real widget card, scaled down so even the large size fits beside the list.
+    /// The real widget card: actual size for small, scaled down so medium and large fit the column.
     private var preview: some View {
-        let isLarge = model.size == .large
-        return ZStack {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(LinearGradient(colors: [Color.blue.opacity(0.14), Color.indigo.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            WidgetPreviewCard(snapshot: ClockSnapshot(date: date, cities: model.cities, reference: model.reference), family: model.size)
-                .scaleEffect(isLarge ? 0.57 : 0.86)
-                .frame(width: 380, height: isLarge ? 224 : 168)
-                .accessibilityHidden(true)
+        let scale: CGFloat = switch model.size {
+        case .small: 1
+        case .medium: 0.82
+        case .large: 0.6
         }
-        .frame(height: isLarge ? 244 : 190)
+        return WidgetPreviewCard(snapshot: ClockSnapshot(date: date, cities: model.cities, reference: model.reference),
+                                 family: model.size)
+            .scaleEffect(scale)
+            .frame(maxWidth: .infinity)
+            .frame(height: model.size == .large ? 240 : 190)
+            .accessibilityHidden(true)
     }
 
-    private func selectedRow(_ city: City, isFirst: Bool) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
-            Text(city.name(in: locale)).font(.callout.weight(.medium))
+    private func selectedRow(_ city: City, position: Int) -> some View {
+        HStack(spacing: 8) {
+            Text("\(position)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary).frame(width: 14)
+            Text(city.name(in: locale)).font(.system(size: 13)).foregroundStyle(.primary)
             Spacer()
-            if !isFirst {
+            if position > 1 {
                 Button { model.moveUp(city.id) } label: { Image(systemName: "chevron.up") }
                     .help(zh ? "上移" : "Move up")
             }
-            Button { model.remove(city.id) } label: {
-                Image(systemName: "minus.circle").foregroundStyle(.secondary)
-            }.help(zh ? "移除城市" : "Remove city")
+            if model.size != .small {
+                Button { model.remove(city.id) } label: { Image(systemName: "xmark") }
+                    .help(zh ? "移除城市" : "Remove city")
+            }
         }
-        .buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 9)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 9))
+        .font(.system(size: 10, weight: .semibold))
+        .buttonStyle(.plain).foregroundStyle(.secondary)
+        .padding(.horizontal, 10).frame(height: 28)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 7))
         .draggable(city.id)
         .dropDestination(for: String.self) { ids, _ in
             guard let id = ids.first else { return false }

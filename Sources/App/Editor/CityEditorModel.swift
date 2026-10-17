@@ -8,8 +8,6 @@ final class CityEditorModel {
     // MARK: State read by the views
 
     private(set) var size: WidgetSize = .small
-    /// Recently saved city IDs, newest first.
-    private(set) var recent: [String] = []
     /// True right after a successful Apply, until the selection changes again.
     private(set) var saved = false
     private(set) var matches: [City] = CityCatalog.curated
@@ -153,7 +151,6 @@ final class CityEditorModel {
 
     private func adopt(_ newSettings: SelectionSettings) {
         settings = newSettings
-        recent = newSettings.validRecentIDs
         errorMessage = nil
     }
 }

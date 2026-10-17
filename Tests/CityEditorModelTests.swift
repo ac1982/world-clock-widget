@@ -97,7 +97,7 @@ final class CityEditorModelTests: XCTestCase {
         XCTAssertTrue(model.saved)
         XCTAssertNil(model.errorMessage)
         XCTAssertEqual(reloads, 1)
-        XCTAssertEqual(model.recent.first, "london")
+        XCTAssertEqual(repo.settings.recentIDs.first, "london")
         XCTAssertEqual(repo.settings.selections["medium"], ["london", "tokyo"])
     }
 

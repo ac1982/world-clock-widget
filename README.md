@@ -15,7 +15,7 @@ Built with SwiftUI, WidgetKit and App Intents. No third-party runtime dependenci
 - **Small:** one city under a sky whose glowing sun or moon rises and sets with its local time.
 - **Medium:** four cities in a 2×2 grid.
 - **Large:** seven cities with aligned times and slim 24-hour day ribbons.
-- Instant English/Chinese city search, recent selections, drag-to-reorder and live previews.
+- Instant English/Chinese city search, popular cities grouped by region with their local times, drag-to-reorder and live previews.
 - System language and 12/24-hour preferences; DST-aware offsets and dates.
 - Light, dark and system-managed monochrome widget appearances.
 

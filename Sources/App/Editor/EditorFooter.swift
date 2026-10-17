@@ -1,24 +1,22 @@
 import SwiftUI
 
-/// Bottom bar: save status, Defaults and Apply. Hidden while viewing a widget's own cities.
+/// Save status, Defaults and Apply for the size being edited.
 struct EditorFooter: View {
     let model: CityEditorModel
     @Environment(\.locale) private var locale
     private var zh: Bool { locale.prefersChinese }
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: model.saved ? "checkmark.circle.fill" : "rectangle.3.group")
-                .foregroundStyle(model.saved ? Color.green : Color.secondary)
-            Text(model.saved ? (zh ? "已保存，小组件正在更新。" : "Saved. Your widgets are updating.") :
-                    (zh ? "用于未在“编辑小组件”中选择城市的同尺寸小组件。" : "Used by this size’s widgets with no cities picked in Edit Widget."))
-                .font(.caption).foregroundStyle(.secondary)
+        HStack(spacing: 10) {
+            if model.saved {
+                Label(zh ? "已保存" : "Saved", systemImage: "checkmark.circle.fill")
+                    .font(.caption).foregroundStyle(.green)
+            }
             Spacer()
             Button(zh ? "默认城市" : "Defaults") { model.restoreDefaults() }
             Button(zh ? "应用到小组件" : "Apply to widgets") { model.apply() }
-                .buttonStyle(.borderedProminent).controlSize(.large)
+                .buttonStyle(.borderedProminent)
                 .disabled(!model.canSave).keyboardShortcut(.return, modifiers: .command)
         }
-        .padding(.horizontal, 26).padding(.vertical, 16)
     }
 }

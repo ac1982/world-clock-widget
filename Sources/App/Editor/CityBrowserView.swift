@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Left half of the editor: search field, recent picks and the list of matching cities.
+/// Left half of the editor: a search field over the popular cities grouped by region,
+/// or over the search results while searching.
 struct CityBrowserView: View {
     @Bindable var model: CityEditorModel
     let date: Date
@@ -8,36 +9,22 @@ struct CityBrowserView: View {
     @FocusState private var searchFocused: Bool
     private var zh: Bool { locale.prefersChinese }
 
-    /// How many recent cities fit in the RECENT row.
-    private static let recentShown = 6
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 8) {
             searchField
-            if !model.isSearching && !model.recent.isEmpty { recentSection }
-            HStack {
-                EditorSectionTitle(!model.isSearching ? (zh ? "常用城市" : "POPULAR CITIES") : (zh ? "搜索结果" : "RESULTS"))
-                Spacer()
-                Text("\(model.matches.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-            }
             ScrollView {
-                LazyVStack(spacing: 5) {
-                    ForEach(model.matches) { city in
-                        cityRow(city)
-                    }
-                    if model.matches.isEmpty {
-                        ContentUnavailableView.search(text: model.query).padding(.top, 48)
-                    }
+                LazyVStack(alignment: .leading, spacing: 2, pinnedViews: [.sectionHeaders]) {
+                    if model.isSearching { searchResults } else { regions }
                 }
             }
             .scrollIndicators(.hidden)
         }
-        .padding(24)
+        .padding(14)
         .onAppear { searchFocused = true }
     }
 
     private var searchField: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             TextField(zh ? "搜索城市 · 中文或英文" : "Search cities in English or Chinese", text: $model.query)
                 .textFieldStyle(.plain).focused($searchFocused)
@@ -48,65 +35,67 @@ struct CityBrowserView: View {
                     .buttonStyle(.plain).help(zh ? "清空搜索" : "Clear search")
             }
         }
-        .padding(13)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.blue.opacity(searchFocused ? 0.45 : 0), lineWidth: 1.5))
+        .padding(.horizontal, 10).frame(height: 32)
+        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.blue.opacity(searchFocused ? 0.45 : 0), lineWidth: 1.5))
     }
 
-    private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            EditorSectionTitle(zh ? "最近选择" : "RECENT")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(model.recent.prefix(Self.recentShown), id: \.self) { id in
-                        if let city = CityCatalog.city(id: id) { recentChip(city) }
-                    }
-                }
+    @ViewBuilder private var searchResults: some View {
+        ForEach(model.matches) { CityPickerRow(model: model, city: $0, date: date) }
+        if model.matches.isEmpty {
+            ContentUnavailableView.search(text: model.query).padding(.top, 40)
+        }
+    }
+
+    private var regions: some View {
+        ForEach(CityRegion.groups(CityCatalog.curated, localZone: model.reference), id: \.region) { group in
+            Section {
+                ForEach(group.cities) { CityPickerRow(model: model, city: $0, date: date) }
+            } header: {
+                EditorSectionTitle(ClockText(locale).regionName(group.region).uppercased())
+                    .padding(.horizontal, 10).padding(.top, 12).padding(.bottom, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.background)
             }
         }
     }
+}
 
-    private func recentChip(_ city: City) -> some View {
-        Button { model.toggle(city) } label: {
-            Text(city.name(in: locale)).font(.caption.weight(.medium))
-                .padding(.horizontal, 11).padding(.vertical, 7)
-                .background(.blue.opacity(0.08), in: Capsule())
-        }
-        .buttonStyle(.plain)
-    }
+/// One slim, clickable city: phase icon, name, difference from local time, local time, then a check or plus.
+struct CityPickerRow: View {
+    @Bindable var model: CityEditorModel
+    let city: City
+    let date: Date
+    @Environment(\.locale) private var locale
 
-    private func cityRow(_ city: City) -> some View {
+    var body: some View {
         let chosen = model.selected.contains(city.id)
-        let phase = ClockMath.phase(in: city.timeZone, at: date)
         let time = ClockFormatting.timeString(date, in: city.timeZone, locale: locale)
-        let offset = ClockMath.offset(of: city.timeZone, from: model.reference, at: date)
-        return Button { model.toggle(city) } label: {
-            HStack(spacing: 12) {
-                PhaseIcon(phase: phase, size: 17)
-                    .frame(width: 36, height: 36)
-                    .background(phase.isDaylight ? Color.orange.opacity(0.09) : Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(city.name(in: locale)).font(.system(size: 14, weight: .semibold))
-                    Text(city.timeZone.localizedName(for: .generic, locale: locale) ?? city.englishName)
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 4)
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(time)
-                        .font(.system(size: 15, weight: .medium, design: .rounded).monospacedDigit())
-                    Text(ClockText(locale).offset(offset))
-                        .font(.caption2).foregroundStyle(.secondary)
-                }
+        let difference = ClockText(locale).difference(
+            dayDelta: ClockMath.dayDelta(of: city.timeZone, from: model.reference, at: date),
+            offsetSeconds: ClockMath.offset(of: city.timeZone, from: model.reference, at: date))
+        Button { model.toggle(city) } label: {
+            HStack(spacing: 10) {
+                PhaseIcon(phase: ClockMath.phase(in: city.timeZone, at: date), size: 12)
+                Text(city.name(in: locale))
+                    .font(.system(size: 13, weight: chosen ? .semibold : .regular))
+                    .lineLimit(1)
+                Spacer(minLength: 6)
+                Text(difference).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                Text(time)
+                    .font(.system(size: 13, weight: .medium).monospacedDigit())
+                    .frame(minWidth: 64, alignment: .trailing)
                 Image(systemName: chosen ? "checkmark.circle.fill" : "plus.circle")
-                    .font(.system(size: 19)).foregroundStyle(chosen ? Color.blue : Color.secondary.opacity(0.4))
+                    .font(.system(size: 15))
+                    .foregroundStyle(chosen ? Color.accentColor : Color.secondary.opacity(0.45))
             }
-            .padding(.horizontal, 10).padding(.vertical, 10)
-            .background(chosen ? Color.blue.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, 10).frame(height: 32)
+            .background(chosen ? Color.accentColor.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 8))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!model.canToggle(city))
-        .accessibilityLabel("\(city.name(in: locale)), \(time)")
+        .accessibilityLabel("\(city.name(in: locale)), \(time), \(difference)")
         .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 }

@@ -2,9 +2,12 @@ import AppKit
 import SwiftUI
 
 /// Window composition only. Selection and persistence rules live in CityEditorModel.
+///
+/// Layout: a slim top bar with the size picker, then the city browser on the left and the
+/// widget preview with the chosen cities on the right.
 struct ContentView: View {
     /// Fixed editor size, shared with the AppKit window and the snapshot tool.
-    static let windowSize = CGSize(width: 940, height: 704)
+    static let windowSize = CGSize(width: 760, height: 540)
 
     @Bindable var model: CityEditorModel
     var previewDate: Date?
@@ -15,7 +18,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            topBar
             Divider()
             Group {
                 if let previewDate {
@@ -26,8 +29,6 @@ struct ContentView: View {
                 }
             }
             .transaction { $0.animation = nil }
-            Divider()
-            EditorFooter(model: model)
         }
         .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(.background)
@@ -51,32 +52,15 @@ struct ContentView: View {
 
     private func editor(date: Date) -> some View {
         HStack(spacing: 0) {
-            CityBrowserView(model: model, date: date).frame(width: 442)
+            CityBrowserView(model: model, date: date).frame(width: 420)
             Divider()
             CitySelectionView(model: model, date: date).frame(maxWidth: .infinity)
         }
     }
 
-    private func sizeLabel(_ family: WidgetSize) -> String {
-        switch family {
-        case .small: zh ? "小号 · 1 城市" : "Small · 1 city"
-        case .medium: zh ? "中号 · 4 城市" : "Medium · 4 cities"
-        case .large: zh ? "大号 · 7 城市" : "Large · 7 cities"
-        }
-    }
-
-    private var header: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "globe.asia.australia.fill")
-                .font(.system(size: 28)).foregroundStyle(.blue.gradient)
-                .frame(width: 48, height: 48)
-                .background(.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(zh ? "你的世界时间" : "Your world, in time")
-                    .font(.system(size: 23, weight: .semibold, design: .rounded))
-                Text(zh ? "找到城市，让时差一目了然。" : "Find a city. Keep your people close.")
-                    .font(.callout).foregroundStyle(.secondary)
-            }
+    private var topBar: some View {
+        HStack {
+            Text(ClockText(locale).title).font(.system(size: 15, weight: .semibold))
             Spacer()
             Picker(zh ? "小组件尺寸" : "Widget size", selection: Binding(
                 get: { model.size }, set: { model.selectSize($0) })) {
@@ -84,8 +68,17 @@ struct ContentView: View {
                     Text(sizeLabel(value)).tag(value)
                 }
             }
-            .pickerStyle(.segmented).labelsHidden().frame(width: 358)
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
         }
-        .padding(.horizontal, 28).padding(.top, 30).padding(.bottom, 22)
+        // The window's title bar is transparent; leave room for the traffic-light buttons.
+        .padding(.leading, 84).padding(.trailing, 18).frame(height: 52)
+    }
+
+    private func sizeLabel(_ family: WidgetSize) -> String {
+        switch family {
+        case .small: zh ? "小" : "Small"
+        case .medium: zh ? "中" : "Medium"
+        case .large: zh ? "大" : "Large"
+        }
     }
 }

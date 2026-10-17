@@ -1,15 +1,12 @@
 import Foundation
 
 struct SelectionSettings: Codable, Equatable, Sendable {
-    /// How many recently picked cities are remembered for the editor's RECENT row.
+    /// How many recently saved cities are remembered in the settings file.
     static let recentLimit = 12
 
     // Preserve the original JSON shape and unknown size keys for forward compatibility.
     var selections: [String: [String]] = [:]
     var recentIDs: [String] = []
-
-    /// Cleaned-up recent city IDs, newest first.
-    var validRecentIDs: [String] { CitySelection.validIDs(recentIDs, limit: Self.recentLimit) }
 
     mutating func set(_ ids: [String], for size: WidgetSize) {
         let valid = CitySelection.validIDs(ids, limit: size.capacity)
