@@ -47,11 +47,13 @@ struct SelectCitiesIntent: WidgetConfigurationIntent {
 
     /// Stable city IDs the given widget size should show, in order.
     func pickedIDs(for family: WidgetFamily) -> [String] {
+        let single = CitySelection.validIDs(location.map { [$0] } ?? [], limit: 1)
+        let multiple = CitySelection.validIDs(locations ?? [], limit: WidgetSize(family).capacity)
         if family == .systemSmall {
-            if let location { return [location] }
-            return locations?.first.map { [$0] } ?? []
+            return single.isEmpty ? multiple : single
         }
-        return locations ?? []
+        // Changing widget size must not discard a city chosen in the single-city picker.
+        return multiple.isEmpty ? single : multiple
     }
 
     func selection(for family: WidgetFamily) -> WidgetSelection {

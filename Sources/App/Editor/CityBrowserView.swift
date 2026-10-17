@@ -13,7 +13,7 @@ struct CityBrowserView: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField(zh ? "搜索城市 · 中文或英文" : "Search cities in English or Chinese", text: $model.query)
                     .textFieldStyle(.plain).focused($searchFocused)
-                    .onSubmit { if let first = model.matches.first { model.toggle(first) } }
+                    .onSubmit { model.submitSearch() }
                     .accessibilityLabel(zh ? "搜索城市" : "Search cities")
                 if !model.query.isEmpty {
                     Button { model.query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }

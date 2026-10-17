@@ -32,7 +32,7 @@ final class CityEditorModel {
     var selected: [String] { source == .widget ? independentIDs : drafts[size] ?? [] }
     var cities: [City] { selected.compactMap(CityCatalog.city(id:)) }
     var canEdit: Bool { source == .app }
-    var canSave: Bool { canEdit && !selected.isEmpty }
+    var canSave: Bool { canEdit && !selected.isEmpty && selected != settings.selections[size.rawValue] }
     var isSearching: Bool { !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     func loadIfNeeded() {
@@ -78,6 +78,11 @@ final class CityEditorModel {
         update(ids)
     }
 
+    func submitSearch() {
+        guard isSearching, let first = matches.first, !selected.contains(first.id) else { return }
+        toggle(first)
+    }
+
     func remove(_ id: String) { update(selected.filter { $0 != id }) }
 
     func moveUp(_ id: String) {
@@ -89,7 +94,7 @@ final class CityEditorModel {
 
     @discardableResult
     func move(_ id: String, to target: String) -> Bool {
-        guard canEdit, let from = selected.firstIndex(of: id), let to = selected.firstIndex(of: target) else { return false }
+        guard canEdit, let from = selected.firstIndex(of: id), let to = selected.firstIndex(of: target), from != to else { return false }
         var ids = selected
         ids.insert(ids.remove(at: from), at: to)
         update(ids)
@@ -114,7 +119,9 @@ final class CityEditorModel {
 
     private func update(_ ids: [String]) {
         guard canEdit else { return }
-        drafts[size] = CitySelection.validIDs(ids, limit: size.capacity)
+        let valid = CitySelection.validIDs(ids, limit: size.capacity)
+        guard valid != selected else { return }
+        drafts[size] = valid
         saved = false
     }
 

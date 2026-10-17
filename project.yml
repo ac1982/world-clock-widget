@@ -80,6 +80,8 @@ targets:
       - Sources/Core
       - Sources/Storage
       - Sources/App/Editor/CityEditorModel.swift
+      - Sources/App/Editor/EditorRefreshSchedule.swift
+      - Sources/App/AppLaunchPolicy.swift
       - Sources/Widget/CityOptionsProvider.swift
       - Sources/Widget/SelectCitiesIntent.swift
       - Sources/Widget/WidgetSize+WidgetKit.swift

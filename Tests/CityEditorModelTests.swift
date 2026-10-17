@@ -20,6 +20,42 @@ private final class MemoryRepository: CitySelectionRepository {
 }
 
 final class CityEditorModelTests: XCTestCase {
+    @MainActor func testUnchangedSelectionDoesNotWriteOrReload() throws {
+        let repo = MemoryRepository()
+        var reloads = 0
+        let model = CityEditorModel(repository: repo) { reloads += 1 }
+        model.loadIfNeeded()
+        XCTAssertFalse(model.canSave)
+        model.apply()
+        XCTAssertEqual(repo.writes, 0)
+        XCTAssertEqual(reloads, 0)
+        model.toggle(try XCTUnwrap(CityCatalog.city(id: "london")))
+        XCTAssertTrue(model.canSave)
+        model.apply()
+        model.apply()
+        XCTAssertEqual(repo.writes, 1)
+        XCTAssertEqual(reloads, 1)
+        XCTAssertFalse(model.canSave)
+    }
+
+    @MainActor func testSearchSubmitOnlyAddsAnExplicitResult() {
+        let model = CityEditorModel(repository: MemoryRepository(), reloadWidgets: {})
+        model.loadIfNeeded()
+        model.submitSearch()
+        XCTAssertEqual(model.selected, ["losangeles"], "An empty search must not replace the selected city")
+        model.selectSize(.medium)
+        model.query = "London"
+        model.submitSearch()
+        XCTAssertEqual(model.selected, ["london", "tokyo"], "Submitting an already selected result must not remove it")
+        model.query = "Paris"
+        model.submitSearch()
+        model.submitSearch()
+        XCTAssertEqual(model.selected, ["london", "tokyo", "paris"])
+        model.query = "no-such-city"
+        model.submitSearch()
+        XCTAssertEqual(model.selected, ["london", "tokyo", "paris"])
+    }
+
     @MainActor func testDraftsSurviveSizeChangesAndOpeningAnotherWidget() throws {
         let repo = MemoryRepository()
         let model = CityEditorModel(repository: repo, reloadWidgets: {})

@@ -5,12 +5,20 @@ import WidgetKit
 struct WorldClockEntryView: View {
     let entry: ClockEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetContentMargins) private var margins
 
     var body: some View {
         let snapshot = ClockSnapshot(date: entry.date, cities: entry.cities, reference: .autoupdatingCurrent, live: true)
         let card = WidgetSize(family)
-        ClockCard(snapshot: snapshot, family: card)
-            // macOS still launches the host for widget clicks. This route never opens a window.
+        Button(intent: PassiveWidgetTapIntent()) {
+            ClockCard(snapshot: snapshot, family: card)
+                .padding(margins)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+            .buttonStyle(.plain)
+            .accessibilityRemoveTraits(.isButton)
+            // Defensive fallback for system-handled clicks outside the content hit region.
             .widgetURL(EditorRoute.displayURL)
             .containerBackground(for: .widget) {
                 ClockCardBackground(snapshot: snapshot, family: card)
@@ -28,6 +36,8 @@ struct WorldClockWidget: Widget {
         .configurationDisplayName("World Clock")
         .description("Local time in the cities you care about.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        // Put padding INSIDE the button so margin clicks are consumed as well.
+        .contentMarginsDisabled()
     }
 }
 

@@ -4,6 +4,20 @@ import XCTest
 
 /// Configuration → displayed city, including zones outside the curated list.
 final class ConfigurationTests: XCTestCase {
+    func testResizingIndependentWidgetPreservesSingleCity() {
+        let intent = SelectCitiesIntent(location: "losangeles")
+        intent.useAppSelection = false
+        for family in [WidgetFamily.systemSmall, .systemMedium, .systemLarge, .systemSmall] {
+            XCTAssertEqual(intent.selection(for: family).cities(for: WidgetSize(family), settings: .init(),
+                reference: sg, at: evening).map(\.id), ["losangeles"])
+        }
+    }
+
+    func testSmallUsesFirstValidListCityWhenSingleCityIsInvalid() {
+        let intent = SelectCitiesIntent(location: "removed-city", locations: ["bad", "london", "tokyo"])
+        XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
+    }
+
     let sg = TimeZone(identifier: "Asia/Singapore")!
     let evening = Date(timeIntervalSince1970: 1_792_237_320)
 

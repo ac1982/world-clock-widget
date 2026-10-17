@@ -7,12 +7,28 @@ import WidgetKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
     private var editor: CityEditorModel?
-    private var receivedURL = false
+    private var launch = AppLaunchPolicy()
+    private var suppressPassiveActivation = false
+
+    func applicationDidUnhide(_ notification: Notification) {
+        if suppressPassiveActivation { keepEditorInactive() }
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        guard suppressPassiveActivation else { return }
+        keepEditorInactive()
+    }
+
+    private func keepEditorInactive() {
+        window?.orderOut(nil)
+        NSApplication.shared.hide(nil)
+        NSApplication.shared.deactivate()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let isDefaultLaunch = notification.userInfo?[NSApplication.launchIsDefaultUserInfoKey] as? Bool == true
         // Widget URLs can arrive after this callback. Only a default launch requests an editor.
-        if !receivedURL && isDefaultLaunch { showEditor() }
+        handle(launch.didFinish(isDefaultLaunch: isDefaultLaunch))
     }
 
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
@@ -26,18 +42,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
-        receivedURL = true
-        if let url = urls.first(where: { EditorRoute(url: $0) != nil }) {
-            showEditor(url: url)
-        } else if window == nil {
-            // A display-only widget click must neither create the editor nor leave the host resident.
-            application.terminate(nil)
+        handle(launch.open(urls, hasEditor: window != nil))
+    }
+
+    private func handle(_ action: AppLaunchPolicy.Action) {
+        switch action {
+        case .none: break
+        case .showEditor(let url): showEditor(url: url)
+        case .keepEditorInactive:
+            // macOS may activate/unhide the host AFTER delivering a double-click URL.
+            // Remove the existing window from that automatic reveal, retaining its drafts.
+            suppressPassiveActivation = true
+            keepEditorInactive()
+        case .terminate: NSApplication.shared.terminate(nil)
         }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
     private func showEditor(url: URL? = nil) {
+        suppressPassiveActivation = false
         // Start as an agent (LSUIElement) so passive widget launches never flash in the Dock.
         // Only an explicit editor request promotes the app to a normal Dock application.
         NSApplication.shared.setActivationPolicy(.regular)

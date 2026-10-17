@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Window composition only. Selection and persistence rules live in CityEditorModel.
@@ -5,7 +6,8 @@ struct ContentView: View {
     @Bindable var model: CityEditorModel
     var previewDate: Date?
     @Environment(\.locale) private var locale
-    @Environment(\.scenePhase) private var scenePhase
+    // This view is hosted in an AppKit window, outside a SwiftUI Window scene.
+    @State private var isAppActive = NSApplication.shared.isActive
     private var zh: Bool { locale.prefersChinese }
 
     var body: some View {
@@ -16,10 +18,8 @@ struct ContentView: View {
             Group {
                 if let previewDate {
                     editor(date: previewDate)
-                } else if scenePhase == .active {
-                    TimelineView(.everyMinute) { context in editor(date: context.date) }
                 } else {
-                    editor(date: .now)
+                    TimelineView(EditorRefreshSchedule(active: isAppActive)) { context in editor(date: context.date) }
                 }
             }
             .transaction { $0.animation = nil }
@@ -28,7 +28,14 @@ struct ContentView: View {
         }
         .frame(width: 940, height: 704)
         .background(.background)
-        .onAppear { model.loadIfNeeded() }
+        .onAppear {
+            isAppActive = NSApplication.shared.isActive
+            model.loadIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in isAppActive = true }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in isAppActive = false }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didMiniaturizeNotification)) { _ in isAppActive = false }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didDeminiaturizeNotification)) { _ in isAppActive = NSApplication.shared.isActive }
         .alert(zh ? "无法读取或保存城市" : "Couldn’t read or save cities", isPresented: Binding(
             get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
                 Button(zh ? "好" : "OK") { model.errorMessage = nil }

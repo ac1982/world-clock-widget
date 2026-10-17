@@ -31,6 +31,34 @@ final class ClockMathTests: XCTestCase {
         XCTAssertEqual(ClockMath.offset(of: india, from: .gmt, at: evening), 5 * 3600 + 30 * 60)
     }
 
+    func testSpringDSTSkipsAndHalfHourTransitions() throws {
+        for (zoneID, before, after, beforeHour, beforeMinute, afterHour, afterMinute, shift) in [
+            ("America/New_York", "2026-03-08T06:59:00Z", "2026-03-08T07:00:00Z", 1, 59, 3, 0, 3600),
+            ("Europe/London", "2026-03-29T00:59:00Z", "2026-03-29T01:00:00Z", 0, 59, 2, 0, 3600),
+            ("Australia/Lord_Howe", "2026-10-03T15:29:00Z", "2026-10-03T15:30:00Z", 1, 59, 2, 30, 1800),
+        ] {
+            let zone = try XCTUnwrap(TimeZone(identifier: zoneID))
+            let start = date(before), end = date(after)
+            let a = ClockMath.localHourMinute(in: zone, at: start)
+            let b = ClockMath.localHourMinute(in: zone, at: end)
+            XCTAssertEqual([a.hour, a.minute], [beforeHour, beforeMinute], zoneID)
+            XCTAssertEqual([b.hour, b.minute], [afterHour, afterMinute], zoneID)
+            XCTAssertEqual(ClockMath.offset(of: zone, from: .gmt, at: end) - ClockMath.offset(of: zone, from: .gmt, at: start), shift)
+        }
+    }
+
+    func testFractionalZoneMidnightAndLeapDayCaptions() throws {
+        let kathmandu = try XCTUnwrap(CityCatalog.city(id: "kathmandu"))
+        let entries = TimelineSchedule.dates(from: date("2026-10-17T18:13:00Z"), count: 2)
+        let before = CityClockState(city: kathmandu, date: entries[0], reference: .gmt)
+        let after = CityClockState(city: kathmandu, date: entries[1], reference: .gmt)
+        XCTAssertEqual(before.dayDelta, 0)
+        XCTAssertEqual(after.dayDelta, 1)
+        XCTAssertEqual(after.fraction, 0)
+        let kiritimati = try XCTUnwrap(TimeZone(identifier: "Pacific/Kiritimati"))
+        XCTAssertEqual(ClockMath.dayDelta(of: kiritimati, from: .gmt, at: date("2028-02-29T14:00:00Z")), 1)
+    }
+
     func testDayDelta() {
         // 19:42 SGT = 07:42 in New York the same day; 00:42 next day in Auckland.
         XCTAssertEqual(ClockMath.dayDelta(of: ny, from: sg, at: evening), 0)
