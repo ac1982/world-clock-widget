@@ -11,8 +11,11 @@ settings:
     ARCHS: arm64
     EXCLUDED_ARCHS: x86_64
     MACOSX_DEPLOYMENT_TARGET: "27.0"
-    DEVELOPMENT_TEAM: 228T79JAL2
-    CODE_SIGN_STYLE: Automatic
+    # No Apple Development certificate/Xcode account on this Mac, so sign to run locally (ad-hoc).
+    # To use a team instead: DEVELOPMENT_TEAM=<id> CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Development".
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
@@ -66,9 +69,6 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ac1982.worldclock.tests
         GENERATE_INFOPLIST_FILE: YES
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: ""
   ClockSnapshots:
     type: tool
     platform: macOS
@@ -76,9 +76,6 @@ targets:
     settings:
       base:
         PRODUCT_NAME: clock-snapshots
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGN_STYLE: Manual
-        DEVELOPMENT_TEAM: ""
 schemes:
   WorldClock:
     build:

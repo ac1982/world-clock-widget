@@ -63,3 +63,43 @@ MainActor.assumeIsolated {
         }
     }
 }
+
+/// App icon: a night-to-day sky squircle with a clock face.
+struct AppIconArt: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 185, style: .continuous)
+                .fill(LinearGradient(colors: [Color(hex: 0x14204A), Color(hex: 0x3B6FD8), Color(hex: 0x8CC8FF)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(Stars().opacity(0.6).mask(LinearGradient(colors: [.white, .clear], startPoint: .topLeading, endPoint: .center)))
+                .overlay(RoundedRectangle(cornerRadius: 185, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 4))
+            Circle()
+                .fill(.white)
+                .frame(width: 520, height: 520)
+                .shadow(color: .black.opacity(0.3), radius: 30, y: 16)
+            ForEach(0 ..< 12) { i in
+                Capsule().fill(Color(hex: 0x1C2A55).opacity(i % 3 == 0 ? 1 : 0.35))
+                    .frame(width: i % 3 == 0 ? 18 : 10, height: i % 3 == 0 ? 54 : 34)
+                    .offset(y: -212)
+                    .rotationEffect(.degrees(Double(i) * 30))
+            }
+            Capsule().fill(Color(hex: 0x1C2A55)).frame(width: 26, height: 150).offset(y: -62).rotationEffect(.degrees(-60))
+            Capsule().fill(Color(hex: 0x1C2A55)).frame(width: 20, height: 210).offset(y: -92).rotationEffect(.degrees(40))
+            Circle().fill(Color(hex: 0xFF9F43)).frame(width: 44, height: 44)
+        }
+        .frame(width: 824, height: 824)
+        .padding(100)
+    }
+}
+
+if CommandLine.arguments.contains("--icon") {
+    MainActor.assumeIsolated {
+        let r = ImageRenderer(content: AppIconArt())
+        r.scale = 1
+        let url = outDir.appendingPathComponent("icon-1024.png")
+        let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
+        CGImageDestinationAddImage(dest, r.cgImage!, nil)
+        CGImageDestinationFinalize(dest)
+        print(url.path)
+    }
+}

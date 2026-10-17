@@ -94,7 +94,7 @@ struct ClockTime: View {
     }
 
     private var attributed: AttributedString {
-        var s = date.formatted(ClockMath.timeStyle(zone: zone, locale: locale).attributed)
+        var s = date.formatted(ClockMath.timeStyle(zone: zone, locale: locale).attributedStyle)
         s.font = .system(size: size, weight: weight, design: .rounded).monospacedDigit()
         for (field, range) in s.runs[AttributeScopes.FoundationAttributes.DateFieldAttribute.self] where field == .amPM {
             s[range].font = .system(size: max(10, size * 0.36), weight: .semibold, design: .rounded)
@@ -313,9 +313,9 @@ struct ClockCardBackground: View {
 /// A few deterministic stars for night skies.
 struct Stars: View {
     private static let points: [(CGFloat, CGFloat, CGFloat)] = [
-        (0.18, 0.12, 1.4), (0.42, 0.08, 1.0), (0.71, 0.20, 1.6), (0.88, 0.10, 1.0),
+        (0.18, 0.12, 1.4), (0.42, 0.08, 1.0), (0.71, 0.24, 1.6), (0.56, 0.06, 1.0),
         (0.30, 0.30, 0.9), (0.60, 0.36, 1.1), (0.82, 0.42, 0.8), (0.12, 0.44, 1.0),
-        (0.52, 0.18, 0.7), (0.95, 0.30, 1.2),
+        (0.52, 0.18, 0.7), (0.93, 0.36, 1.2),
     ]
     var body: some View {
         Canvas { ctx, size in
