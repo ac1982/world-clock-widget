@@ -3,3 +3,13 @@ DerivedData/
 *.xcodeproj/
 xcuserdata/
 .DS_Store
+
+# Never publish local settings, credentials or private signing material.
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.key
+*.mobileprovision
+city-selections.json

@@ -73,7 +73,7 @@ enum CityCatalog {
 
     static let all: [City] = curated + derived
 
-    private static let byID: [String: City] = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+    private static let byID: [String: City] = Dictionary(curated.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
 
     static func city(id: String) -> City? {
         if let city = byID[id] { return city }
@@ -97,26 +97,6 @@ enum CityCatalog {
         let elsewhere = defaults.filter { $0.timeZone.secondsFromGMT(for: date) != localOffset }
         let same = defaults.filter { $0.timeZone.secondsFromGMT(for: date) == localOffset }
         return elsewhere + same
-    }
-
-    /// What a widget shows for a configuration: the picked cities (unknown ids dropped), or the defaults
-    /// when nothing usable was picked. Small widgets show only the first.
-    static func resolve(pickedIDs: [String], capacity: Int, local: TimeZone, at date: Date = .now) -> [City] {
-        let picked = pickedIDs.compactMap(city(id:))
-        let list = picked.isEmpty ? defaults(relativeTo: local, at: date) : picked
-        return Array(list.prefix(max(1, capacity)))
-    }
-
-    /// Case-, diacritic- and width-insensitive search over both names and the zone identifier.
-    static func search(_ query: String) -> [City] {
-        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else { return curated }
-        let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive, .widthInsensitive]
-        return all.filter {
-            $0.englishName.range(of: q, options: options) != nil
-                || $0.chineseName.range(of: q, options: options) != nil
-                || $0.timeZoneIdentifier.replacingOccurrences(of: "_", with: " ").range(of: q, options: options) != nil
-        }
     }
 
     private static func c(_ id: String, _ en: String, _ zh: String, _ tz: String) -> City {

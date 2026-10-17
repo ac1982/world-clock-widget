@@ -53,20 +53,20 @@ final class ClockMathTests: XCTestCase {
     }
 
     func testTimeStringFollowsHourCycle() {
-        let us = ClockMath.timeString(evening, in: sg, locale: Locale(identifier: "en_US"))
+        let us = ClockFormatting.timeString(evening, in: sg, locale: Locale(identifier: "en_US"))
         XCTAssertTrue(us.hasPrefix("7:42"), us)
         XCTAssertTrue(us.contains("PM"), us)
-        XCTAssertEqual(ClockMath.timeString(evening, in: sg, locale: Locale(identifier: "en_GB")), "19:42")
-        XCTAssertEqual(ClockMath.timeString(evening, in: sg, locale: Locale(identifier: "zh_Hans_CN")), "19:42")
+        XCTAssertEqual(ClockFormatting.timeString(evening, in: sg, locale: Locale(identifier: "en_GB")), "19:42")
+        XCTAssertEqual(ClockFormatting.timeString(evening, in: sg, locale: Locale(identifier: "zh_Hans_CN")), "19:42")
         // Forced 24-hour via the locale's hour-cycle keyword (what System Settings toggles).
-        XCTAssertEqual(ClockMath.timeString(evening, in: sg, locale: Locale(identifier: "en_US@hours=h23")), "19:42")
+        XCTAssertEqual(ClockFormatting.timeString(evening, in: sg, locale: Locale(identifier: "en_US@hours=h23")), "19:42")
     }
 
     func testHourCycleDetection() {
-        XCTAssertTrue(ClockMath.uses12HourClock(Locale(identifier: "en_US")))
-        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "en_GB")))
-        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "zh_Hans_CN")))
-        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "en_US@hours=h23")))
+        XCTAssertTrue(ClockFormatting.uses12HourClock(Locale(identifier: "en_US")))
+        XCTAssertFalse(ClockFormatting.uses12HourClock(Locale(identifier: "en_GB")))
+        XCTAssertFalse(ClockFormatting.uses12HourClock(Locale(identifier: "zh_Hans_CN")))
+        XCTAssertFalse(ClockFormatting.uses12HourClock(Locale(identifier: "en_US@hours=h23")))
     }
 
     func testCaptionsEnglish() {
@@ -105,11 +105,11 @@ final class CityCatalogTests: XCTestCase {
     }
 
     func testSearch() {
-        XCTAssertTrue(CityCatalog.search("new y").contains { $0.id == "newyork" })
-        XCTAssertTrue(CityCatalog.search("伦敦").contains { $0.id == "london" })
-        XCTAssertTrue(CityCatalog.search("sao paulo").contains { $0.id == "saopaulo" })
-        XCTAssertTrue(CityCatalog.search("Yerevan").contains { $0.timeZoneIdentifier == "Asia/Yerevan" })
-        XCTAssertEqual(CityCatalog.search("  ").count, CityCatalog.curated.count)
+        XCTAssertTrue(CitySearch.search("new y").contains { $0.id == "newyork" })
+        XCTAssertTrue(CitySearch.search("伦敦").contains { $0.id == "london" })
+        XCTAssertTrue(CitySearch.search("sao paulo").contains { $0.id == "saopaulo" })
+        XCTAssertTrue(CitySearch.search("Yerevan").contains { $0.timeZoneIdentifier == "Asia/Yerevan" })
+        XCTAssertEqual(CitySearch.search("  ").count, CityCatalog.curated.count)
     }
 
     func testDefaultsPutOtherZonesFirst() {

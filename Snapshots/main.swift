@@ -13,6 +13,50 @@ let fixed = try! Date("2026-10-17T11:42:00Z", strategy: .iso8601) // 19:42 SGT
 let cities = CityCatalog.defaults(relativeTo: singapore, at: fixed)
 let snapshot = ClockSnapshot(date: fixed, cities: cities, reference: singapore)
 
+if CommandLine.arguments.contains("--picker") {
+    MainActor.assumeIsolated {
+        for (mode, scheme) in [("light", ColorScheme.light), ("dark", ColorScheme.dark)] {
+            writePicker(scheme: scheme, name: "city-picker-\(mode).png")
+        }
+    }
+}
+
+/// Rendering fixtures never read or modify the user's real city selections.
+struct SnapshotRepository: CitySelectionRepository {
+    func read() throws -> SelectionSettings {
+        SelectionSettings(selections: ["small": ["losangeles"]], recentIDs: ["losangeles", "london"])
+    }
+    func save(ids: [String], size: WidgetSize) throws -> SelectionSettings { try read() }
+}
+
+@MainActor
+func previewModel() -> CityEditorModel {
+    let model = CityEditorModel(repository: SnapshotRepository(), reference: singapore, now: { fixed }, reloadWidgets: {})
+    model.loadIfNeeded()
+    return model
+}
+
+/// Native controls and scroll views need AppKit rendering rather than ImageRenderer.
+@MainActor
+func writePicker(scheme: ColorScheme, name: String) {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.prohibited)
+    let view = NSHostingView(rootView: ContentView(model: previewModel(), previewDate: fixed)
+        .environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "en_US")))
+    let rect = NSRect(x: 0, y: 0, width: 940, height: 704)
+    let window = NSWindow(contentRect: rect, styleMask: [.borderless], backing: .buffered, defer: false)
+    window.contentView = view
+    view.frame = rect
+    view.layoutSubtreeIfNeeded()
+    window.displayIfNeeded()
+    guard let bitmap = view.bitmapImageRepForCachingDisplay(in: rect) else { fatalError("picker render failed") }
+    view.cacheDisplay(in: rect, to: bitmap)
+    guard let data = bitmap.representation(using: .png, properties: [:]) else { fatalError("picker PNG failed") }
+    let url = outDir.appendingPathComponent(name)
+    try! data.write(to: url)
+    print(url.path)
+}
+
 struct Gallery: View {
     let snapshot: ClockSnapshot
     let scheme: ColorScheme

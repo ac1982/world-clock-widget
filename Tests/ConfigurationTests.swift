@@ -7,64 +7,95 @@ final class ConfigurationTests: XCTestCase {
     let sg = TimeZone(identifier: "Asia/Singapore")!
     let evening = Date(timeIntervalSince1970: 1_792_237_320)
 
-    func testPhoenixResolvesThroughQueryRoundTrip() async throws {
-        let query = CityQuery()
-        let found = try await query.entities(matching: "Phoenix")
-        let phoenix = try XCTUnwrap(found.first { $0.city?.timeZoneIdentifier == "America/Phoenix" })
-        let back = try await query.entities(for: [phoenix.id])
-        XCTAssertEqual(back.map(\.id), [phoenix.id])
-        XCTAssertEqual(back.first?.city?.englishName, "Phoenix")
+    func testOptionsUseStableCatalogIDs() async throws {
+        let options = try await CityOptionsProvider().results()
+        XCTAssertEqual(options.items, CityCatalog.curated.map(\.id))
+        for id in options.items {
+            XCTAssertNotNil(CityCatalog.city(id: id))
+        }
+    }
+
+    func testPickerSearchFindsCitiesWithoutScrollingTheWholeCatalog() {
+        XCTAssertEqual(CityOptionsProvider.options(matching: "Phoenix").items, ["tz:America/Phoenix"])
+        XCTAssertEqual(CityOptionsProvider.options(matching: "伦敦").items, ["london"])
+        XCTAssertEqual(CityOptionsProvider.options(matching: "  NEW Y  ").items, ["newyork"])
+        XCTAssertEqual(CityOptionsProvider.options(matching: "sao paulo").items, ["saopaulo"])
+        XCTAssertTrue(CityOptionsProvider.options(matching: "no-such-city").items.isEmpty)
+        XCTAssertEqual(CityOptionsProvider.options(matching: "Los Angeles").items.first, "losangeles")
+        XCTAssertEqual(CityOptionsProvider.options(matching: "上海").items.first, "shanghai")
+    }
+
+    func testSearchDoesNotReplaceTheSavedSelection() {
+        let intent = SelectCitiesIntent(location: "london", locations: ["london", "tokyo"])
+        intent.search = "Phoenix"
+        XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
+        XCTAssertEqual(intent.pickedIDs(for: .systemMedium), ["london", "tokyo"])
     }
 
     func testSmallShowsPickedCityNotDefault() {
-        let intent = SelectCitiesIntent(city: CityEntity(id: "tz:America/Phoenix"))
+        let intent = SelectCitiesIntent(location: "tz:America/Phoenix")
         let ids = intent.pickedIDs(for: .systemSmall)
-        let shown = CityCatalog.resolve(pickedIDs: ids, capacity: CardFamily.small.capacity, local: sg, at: evening)
+        let shown = CitySelection.resolve( ids, size: .small, reference: sg, at: evening)
         XCTAssertEqual(shown.map(\.timeZoneIdentifier), ["America/Phoenix"])
     }
 
     func testSmallFallsBackToFirstListedCity() {
-        let intent = SelectCitiesIntent(cities: [CityEntity(id: "london"), CityEntity(id: "tokyo")])
+        let intent = SelectCitiesIntent(locations: ["london", "tokyo"])
         XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
     }
 
     func testMediumKeepsOrderAndCapacity() {
         let ids = ["tz:America/Phoenix", "london", "bogus", "tokyo", "paris", "sydney"]
-        let shown = CityCatalog.resolve(pickedIDs: ids, capacity: CardFamily.medium.capacity, local: sg, at: evening)
+        let shown = CitySelection.resolve( ids, size: .medium, reference: sg, at: evening)
         XCTAssertEqual(shown.map(\.id), ["tz:America/Phoenix", "london", "tokyo", "paris"])
     }
 
     func testEmptyConfigurationUsesDefaultsWithOtherZoneFirst() {
-        let shown = CityCatalog.resolve(pickedIDs: SelectCitiesIntent().pickedIDs(for: .systemSmall),
-                                        capacity: 1, local: sg, at: evening)
+        let shown = CitySelection.resolve( SelectCitiesIntent().pickedIDs(for: .systemSmall),
+                                        size: .small, reference: sg, at: evening)
         XCTAssertEqual(shown.map(\.id), ["tokyo"])
     }
 
-    func testEveryCatalogCityRoundTrips() async throws {
-        let ids = CityCatalog.all.map(\.id)
-        let back = try await CityQuery().entities(for: ids)
-        XCTAssertEqual(back.map(\.id), ids)
+    func testSelectionChangesReplacePreviousCity() {
+        let intent = SelectCitiesIntent(location: "tokyo")
+        intent.location = "losangeles"
+        let shown = CitySelection.resolve( intent.pickedIDs(for: .systemSmall),
+                                        size: .small, reference: sg, at: evening)
+        XCTAssertEqual(shown.map(\.id), ["losangeles"])
     }
+
+    func testListSelectionKeepsOrderForBothSizes() {
+        let intent = SelectCitiesIntent(locations: ["paris", "tz:America/Phoenix"])
+        for family in [WidgetFamily.systemMedium, .systemLarge] {
+            XCTAssertEqual(intent.pickedIDs(for: family), ["paris", "tz:America/Phoenix"])
+        }
+    }
+
 }
 
 final class TimelineTests: XCTestCase {
+    func testLosAngelesTimeAndDateAcrossMidnightAndDST() throws {
+        let la = try XCTUnwrap(CityCatalog.city(id: "losangeles"))
+        let locale = Locale(identifier: "en_GB")
+        for (instant, expected) in [
+            ("2026-10-17T12:30:00Z", "5:30"),
+            ("2026-10-17T06:59:00Z", "23:59"),
+            ("2026-10-17T07:00:00Z", "0:00"),
+            ("2026-11-01T08:59:00Z", "1:59"),
+            ("2026-11-01T09:00:00Z", "1:00"),
+        ] {
+            let date = try Date(instant, strategy: .iso8601)
+            let text = date.formatted(ClockFormatting.timeStyle(zone: la.timeZone, locale: locale).attributedStyle)
+            XCTAssertEqual(String(text.characters), expected)
+        }
+    }
+
     func testQuarterHourGrid() {
         let d = try! Date("2026-10-17T11:52:31Z", strategy: .iso8601)
-        let dates = ClockMath.quarterHourDates(from: d, count: 24)
-        XCTAssertEqual(dates.first, try! Date("2026-10-17T11:45:00Z", strategy: .iso8601))
+        let dates = TimelineSchedule.dates(from: d, count: 24)
+        XCTAssertEqual(dates.first, try! Date("2026-10-17T11:52:31Z", strategy: .iso8601))
         XCTAssertEqual(dates.last, try! Date("2026-10-17T17:30:00Z", strategy: .iso8601))
         XCTAssertEqual(dates.count, 24)
     }
 
-    func testLiveStylesMatchStaticFormatting() {
-        let d = Date(timeIntervalSince1970: 1_792_237_320)
-        let sg = TimeZone(identifier: "Asia/Singapore")!
-        let us = Locale(identifier: "en_US"), gb = Locale(identifier: "en_GB"), zh12 = Locale(identifier: "zh_Hans_CN@hours=h12")
-        XCTAssertEqual(d.formatted(ClockMath.digitsStyle(zone: sg, locale: us)), "7:42")
-        XCTAssertEqual(d.formatted(ClockMath.periodStyle(zone: sg, locale: us)), "PM")
-        XCTAssertEqual(d.formatted(ClockMath.digitsStyle(zone: sg, locale: gb)), "19:42")
-        XCTAssertFalse(ClockMath.periodLeads(us))
-        XCTAssertTrue(ClockMath.periodLeads(zh12))
-        XCTAssertEqual(d.formatted(ClockMath.periodStyle(zone: sg, locale: zh12)), "下午")
-    }
 }
