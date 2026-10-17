@@ -74,8 +74,15 @@ enum ClockMath {
         Date.FormatStyle(date: .omitted, time: .shortened, locale: locale, calendar: Calendar(identifier: .gregorian), timeZone: zone)
     }
 
-    static func weekdayString(_ date: Date, in zone: TimeZone, locale: Locale) -> String {
-        date.formatted(Date.FormatStyle(locale: locale, calendar: Calendar(identifier: .gregorian), timeZone: zone).weekday(.abbreviated))
+    static func weekdayString(_ date: Date, in zone: TimeZone, locale: Locale, wide: Bool = false) -> String {
+        date.formatted(Date.FormatStyle(locale: locale, calendar: Calendar(identifier: .gregorian), timeZone: zone)
+            .weekday(wide ? .wide : .abbreviated))
+    }
+
+    /// Whether the locale (including the user's 24-Hour Time setting) shows a day period like AM/PM.
+    static func uses12HourClock(_ locale: Locale) -> Bool {
+        let pattern = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale) ?? ""
+        return pattern.contains("a") || pattern.contains("b") || pattern.contains("B")
     }
 
     static func longDateString(_ date: Date, in zone: TimeZone, locale: Locale) -> String {

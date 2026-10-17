@@ -62,6 +62,13 @@ final class ClockMathTests: XCTestCase {
         XCTAssertEqual(ClockMath.timeString(evening, in: sg, locale: Locale(identifier: "en_US@hours=h23")), "19:42")
     }
 
+    func testHourCycleDetection() {
+        XCTAssertTrue(ClockMath.uses12HourClock(Locale(identifier: "en_US")))
+        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "en_GB")))
+        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "zh_Hans_CN")))
+        XCTAssertFalse(ClockMath.uses12HourClock(Locale(identifier: "en_US@hours=h23")))
+    }
+
     func testCaptionsEnglish() {
         let t = ClockText(Locale(identifier: "en_US"))
         XCTAssertEqual(t.caption(dayDelta: 0, offsetSeconds: 0), "Today, same time")
