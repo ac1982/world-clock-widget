@@ -5,13 +5,13 @@ cd "${0:A:h}/.."
 xcodegen generate -q
 # Core must compile without SwiftUI, AppIntents, WidgetKit or persistence implementations.
 xcrun swiftc -swift-version 6 -typecheck Sources/Core/*.swift
-xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -derivedDataPath build \
+xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -derivedDataPath build/DerivedData.noindex \
   -destination 'platform=macOS,arch=arm64' test -quiet
-xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release -derivedDataPath build \
+xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release -derivedDataPath build/DerivedData.noindex \
   -destination 'platform=macOS,arch=arm64' build -quiet
-python3 scripts/check-widget-metadata.py build/Build/Products/Release/WorldClock.app
-xcodebuild -project WorldClock.xcodeproj -scheme ClockSnapshots -derivedDataPath build \
+python3 scripts/check-widget-metadata.py build/DerivedData.noindex/Build/Products/Release/WorldClock.app
+xcodebuild -project WorldClock.xcodeproj -scheme ClockSnapshots -derivedDataPath build/DerivedData.noindex \
   -destination 'platform=macOS,arch=arm64' build -quiet
-build/Build/Products/Debug/clock-snapshots build/snapshots --app-window
+build/DerivedData.noindex/Build/Products/Debug/clock-snapshots build/snapshots --app-window
 git diff --check
 git diff --cached --check

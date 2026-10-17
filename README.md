@@ -64,7 +64,7 @@ The generated `.xcodeproj` and build outputs are intentionally ignored.
 
 ```sh
 # Refresh the screenshots in this README after reviewing them:
-build/Build/Products/Debug/clock-snapshots docs --app-window
+build/DerivedData.noindex/Build/Products/Debug/clock-snapshots docs --app-window
 # Inspect widget registration and recent chronod activity:
 ./scripts/verify-widget.sh
 ```

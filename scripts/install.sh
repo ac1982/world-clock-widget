@@ -3,8 +3,8 @@
 set -euo pipefail
 cd "${0:A:h}/.."
 xcodegen generate -q
-xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release -derivedDataPath build build -quiet
-python3 scripts/check-widget-metadata.py build/Build/Products/Release/WorldClock.app
+xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release -derivedDataPath build/DerivedData.noindex build -quiet
+python3 scripts/check-widget-metadata.py build/DerivedData.noindex/Build/Products/Release/WorldClock.app
 APP_DEST="$HOME/Applications/World Clock Widget.app"
 # Earlier versions installed under this name; remove it so only one copy hosts the widget.
 LEGACY_APP="$HOME/Applications/WorldClock.app"
@@ -21,11 +21,14 @@ cleanup() {
 }
 trap cleanup EXIT
 # Prepare and verify the replacement before touching the installed app.
-ditto build/Build/Products/Release/WorldClock.app "$INSTALL_STAGE/WorldClock.app"
+ditto build/DerivedData.noindex/Build/Products/Release/WorldClock.app "$INSTALL_STAGE/WorldClock.app"
 codesign --verify --deep --strict "$INSTALL_STAGE/WorldClock.app"
 LSREG=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
-# Keep exactly one registered copy, otherwise chronod may pick a stale build.
-for stale in build/Build/Products/*/WorldClock.app; do "$LSREG" -u "$stale" 2>/dev/null || true; done
+# Keep exactly one registered copy, otherwise chronod may pick a stale build. Build products live under a
+# .noindex folder so Spotlight never offers them; build/Build is where earlier versions put them.
+for stale in build/DerivedData.noindex/Build/Products/*/WorldClock.app(N) build/Build/Products/*/WorldClock.app(N); do
+  "$LSREG" -u "$stale" 2>/dev/null || true
+done
 pkill -x WorldClock 2>/dev/null || true
 # Wait for the old app to exit before LaunchServices reopens its replacement.
 for attempt in {1..30}; do
