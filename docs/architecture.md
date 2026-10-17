@@ -13,8 +13,8 @@ flowchart LR
     Selection --> Timeline[ClockProvider / TimelineSchedule]
     Timeline --> Snapshot[ClockSnapshot / CityClockState]
     Snapshot --> Cards[Small / Medium / Large cards]
-    Cards --> Route[EditorRoute with selection source]
-    Route --> Editor[CityEditorModel]
+    Cards --> Passive[Display-only URL: no editor window]
+    Explicit[Explicit app launch or editor URL] --> Editor[CityEditorModel]
     Editor --> JSON
     Editor --> Reload[WidgetCenter reload after successful save]
 ```
@@ -28,7 +28,11 @@ flowchart LR
 - `SelectionSettings` retains the previous JSON shape and unknown size keys. The repository re-reads before
   each atomic save, preserving other sizes. Only the single host app writes settings; the widget only reads.
   Atomic replacement prevents partial documents but is not a general concurrent multi-writer transaction.
-- `EditorRoute` carries size, ordered IDs and source. Old links without a source are accepted as app links.
+- Ordinary widget clicks use `worldclock://display`. AppKit owns window creation, so this route is consumed
+  without creating an editor or initializing its model. A host launched solely for this route exits immediately.
+  macOS can still briefly launch the host; this is not a promise of zero process activity on a click.
+  Explicitly opening the app still shows its editor. Right-click **Edit Widget** remains macOS's native configuration UI.
+- `EditorRoute` carries size, ordered IDs and source for explicit or legacy editor links. Old links without a source are accepted as app links.
   Independent-widget routes are read-only in the app because the app cannot rewrite an installed instance's
   App Intent configuration. Switching to shared editing is explicit.
 - `CityEditorModel` owns per-size drafts, capacity, ordering, save/error state and search results. Its repository
@@ -70,4 +74,6 @@ Snapshot fixtures use a fixed instant and fake repository, so documentation rend
 
 Release metadata checks catch intent schema changes that direct Swift tests do not. Rendered PNGs cover all sizes,
 English/Chinese and light/dark modes. Actual desktop checks remain required for sandbox access, widget registration,
-dynamic time-zone behavior, monochrome rendering and click-to-edit routing.
+dynamic time-zone behavior, monochrome rendering, passive clicks and explicit editor launch.
+
+Apple documents the default widget-to-app launch behavior in [Linking to specific app scenes](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity).

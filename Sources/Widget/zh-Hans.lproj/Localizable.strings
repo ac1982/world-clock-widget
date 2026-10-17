@@ -11,4 +11,4 @@
 "No matching cities" = "没有匹配的城市";
 "Use app selection" = "使用应用中的城市选择";
 
-"Click the widget to choose cities in World Clock. Turn off to choose cities only for this widget." = "点击小组件，在世界时钟中选择城市。关闭后可为此小组件单独选择城市。";
+"Open World Clock to edit shared city lists. Turn off to choose cities here for this widget only." = "打开世界时钟应用可编辑公共城市列表。关闭此选项后，可在这里为此小组件单独选择城市。";

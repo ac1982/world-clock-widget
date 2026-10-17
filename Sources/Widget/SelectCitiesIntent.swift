@@ -7,7 +7,7 @@ struct SelectCitiesIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Choose Cities"
     static let description = IntentDescription("Pick the cities to show. Leave empty for the default set.")
 
-    @Parameter(title: "Use app selection", description: "Click the widget to choose cities in World Clock. Turn off to choose cities only for this widget.", default: true)
+    @Parameter(title: "Use app selection", description: "Open World Clock to edit shared city lists. Turn off to choose cities here for this widget only.", default: true)
     var useAppSelection: Bool
 
     @Parameter(title: "Search cities", description: "Type a city name in English or Chinese, then open the city picker.")

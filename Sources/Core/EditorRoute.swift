@@ -1,6 +1,9 @@
 import Foundation
 
 struct EditorRoute: Equatable, Sendable {
+    /// A widget click is not a request to edit. The host consumes this without creating a window.
+    static let displayURL = URL(string: "worldclock://display")!
+
     let size: WidgetSize
     let source: SelectionSource
     let ids: [String]

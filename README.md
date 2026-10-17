@@ -30,7 +30,10 @@ and installs the app at `~/Applications/WorldClock.app`. Local builds are ad-hoc
 an Apple Developer account is not required for this configuration.
 
 Right-click the desktop → **Edit Widgets…** → search **World Clock**, then add a size.
-Click a widget to open the city editor, select cities, and choose **Apply to widgets**.
+Ordinary clicks on a widget do not open the city selector. To edit the widget, right-click it and choose
+**Edit “World Clock”**. Disable **Use app selection** to choose cities directly for that widget.
+To edit shared lists with the larger searchable editor, explicitly open World Clock from Applications,
+select cities, and choose **Apply to widgets**.
 The app quits when its last window closes. Widgets continue to work without it.
 
 ![City editor](docs/city-picker-light.png)
@@ -42,9 +45,8 @@ Switching sizes in the editor preserves each size's unsaved draft until the app 
 The editor's Apply button saves only the currently selected size.
 
 To give one widget its own cities, right-click it → **Edit “World Clock”**, disable **Use app selection**,
-and use the native city picker. Clicking this independent widget opens a preview with instructions for
-editing it in the desktop menu. **Edit shared selection** explicitly switches to the app's shared settings;
-it does not modify an independent widget's configuration.
+and use the native city picker. Ordinary widget clicks leave the clock in place and do not change selections.
+Shared lists remain available by explicitly opening the World Clock app.
 
 Existing city IDs and the `city-selections.json` format remain compatible. Without a saved app selection,
 the widget keeps its native configured cities, or uses defaults if none are valid. Empty or invalid selections

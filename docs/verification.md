@@ -15,7 +15,7 @@ These are observations from one local build, not performance guarantees across m
 The checks are reproducible through `scripts/check.sh`. Xcode emitted a test-launch diagnostics warning;
 the test result bundle reported no test failures or runtime warnings.
 
-## Installed desktop flow
+## Original refactor desktop flow (before passive-click update)
 
 - Existing saved Los Angeles selection loaded after replacing the app with the refactored Release build.
 - Searching London produced a direct result.
@@ -50,3 +50,21 @@ rendering work or storage held by macOS's shared widget host.
 
 The refactor adds no repeating widget timer. Time digits remain system-managed; metadata uses 24 quarter-hour
 entries. A controlled Instruments comparison would be needed to quantify any CPU/allocation improvement.
+
+## Passive-click update
+
+Ordinary widget clicks now use a display-only URL instead of an editor route. The host explicitly controls
+window creation and exits without creating an editor when launched for this URL. Native right-click
+**Edit “World Clock”** remains available. The earlier click-to-edit observations above describe the prior build.
+
+Verified on the installed small widget:
+
+- A normal click, double-click and clicks on the top/left margins did not open a selector.
+- The host process was absent after those interactions; no editor-window creation was recorded during the checks.
+- Right-click → **Edit “World Clock”** still opened the native configuration panel.
+- An explicit app launch still opened the full searchable editor.
+- Los Angeles remained selected and the clock continued advancing.
+
+The regression suite now contains 45 passing tests, including rejection of display-only URLs as editor requests.
+macOS may briefly start the host to deliver the URL; this change prevents automatic editor presentation and
+continued host residency, rather than claiming that the OS never starts a process.

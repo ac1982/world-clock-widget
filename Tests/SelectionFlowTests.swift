@@ -35,6 +35,12 @@ final class SelectionFlowTests: XCTestCase {
         }
     }
 
+    func testDisplayClickCannotBeParsedAsAnEditorRequest() {
+        XCTAssertEqual(EditorRoute.displayURL.absoluteString, "worldclock://display")
+        XCTAssertNil(EditorRoute(url: EditorRoute.displayURL))
+        XCTAssertNil(EditorRoute(url: URL(string: "worldclock://display?family=small&city=london")!))
+    }
+
     func testLegacyRoutesAndUntrustedLinks() throws {
         let legacy = try XCTUnwrap(EditorRoute(url: URL(string: "worldclock://cities?family=medium&city=london&city=bogus&city=london&city=tokyo")!))
         XCTAssertEqual(legacy.source, .app)

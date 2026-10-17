@@ -10,7 +10,8 @@ struct WorldClockEntryView: View {
         let snapshot = ClockSnapshot(date: entry.date, cities: entry.cities, reference: .autoupdatingCurrent, live: true)
         let card = WidgetSize(family)
         ClockCard(snapshot: snapshot, family: card)
-            .widgetURL(EditorRoute(size: card, source: entry.source, ids: entry.cities.map(\.id)).url)
+            // macOS still launches the host for widget clicks. This route never opens a window.
+            .widgetURL(EditorRoute.displayURL)
             .containerBackground(for: .widget) {
                 ClockCardBackground(snapshot: snapshot, family: card)
             }
