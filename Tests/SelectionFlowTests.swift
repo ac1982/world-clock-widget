@@ -5,8 +5,8 @@ final class SelectionFlowTests: XCTestCase {
     let date = Date(timeIntervalSince1970: 1_792_237_320)
 
     func testInvalidAndDuplicateIDsNeverReachRenderer() {
-        let settings = SelectionSettings(selections: ["medium": ["bad", "london", "london", "tokyo", "paris", "sydney", "beijing"]])
-        XCTAssertEqual(CitySelection.cities(for: .medium, settings: settings, reference: reference, at: date).map(\.id),
+        let ids = ["bad", "london", "london", "tokyo", "paris", "sydney", "beijing"]
+        XCTAssertEqual(CitySelection.resolve(ids, size: .medium, reference: reference, at: date).map(\.id),
                        ["london", "tokyo", "paris", "sydney"])
         XCTAssertTrue(CitySelection.validIDs(["tokyo"], limit: 0).isEmpty)
     }

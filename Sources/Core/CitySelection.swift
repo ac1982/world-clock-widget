@@ -1,26 +1,6 @@
 import Foundation
 
-struct SelectionSettings: Codable, Equatable, Sendable {
-    /// How many recently saved cities are remembered in the settings file.
-    static let recentLimit = 12
-
-    // Preserve the original JSON shape and unknown size keys for forward compatibility.
-    var selections: [String: [String]] = [:]
-    var recentIDs: [String] = []
-
-    mutating func set(_ ids: [String], for size: WidgetSize) {
-        let valid = CitySelection.validIDs(ids, limit: size.capacity)
-        selections[size.rawValue] = valid
-        recentIDs = CitySelection.validIDs(valid + recentIDs, limit: Self.recentLimit)
-    }
-}
-
 enum CitySelection {
-    /// What a widget of `size` shows: the app's saved list for that size, or the defaults.
-    static func cities(for size: WidgetSize, settings: SelectionSettings, reference: TimeZone, at date: Date) -> [City] {
-        resolve(settings.selections[size.rawValue] ?? [], size: size, reference: reference, at: date)
-    }
-
     /// Keeps known IDs in order, drops duplicates and stops at `limit`.
     static func validIDs(_ ids: [String], limit: Int) -> [String] {
         guard limit > 0 else { return [] }

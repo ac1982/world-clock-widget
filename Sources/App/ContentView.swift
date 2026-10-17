@@ -1,84 +1,74 @@
 import AppKit
 import SwiftUI
 
-/// Window composition only. Selection and persistence rules live in CityEditorModel.
-///
-/// Layout: a slim top bar with the size picker, then the city browser on the left and the
-/// widget preview with the chosen cities on the right.
+/// The app's only window. Cities are chosen in Edit Widget, so this explains how,
+/// next to a live preview of a small widget.
 struct ContentView: View {
-    /// Fixed editor size, shared with the AppKit window and the snapshot tool.
-    static let windowSize = CGSize(width: 760, height: 540)
+    /// Fixed window size, shared with the AppKit window and the snapshot tool.
+    static let windowSize = CGSize(width: 600, height: 300)
 
-    @Bindable var model: CityEditorModel
+    /// A fixed instant for snapshot rendering; nil shows the live time.
     var previewDate: Date?
+    var reference: TimeZone = .autoupdatingCurrent
     @Environment(\.locale) private var locale
     // This view is hosted in an AppKit window, outside a SwiftUI Window scene.
     @State private var isAppActive = NSApplication.shared.isActive
     private var zh: Bool { locale.prefersChinese }
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            Divider()
+        HStack(alignment: .center, spacing: 32) {
             Group {
                 if let previewDate {
-                    // Snapshot rendering uses a fixed instant instead of a ticking clock.
-                    editor(date: previewDate)
+                    preview(date: previewDate)
                 } else {
-                    TimelineView(EditorRefreshSchedule(active: isAppActive)) { context in editor(date: context.date) }
+                    TimelineView(PreviewRefreshSchedule(active: isAppActive)) { context in preview(date: context.date) }
                 }
             }
             .transaction { $0.animation = nil }
+            instructions
         }
+        .padding(.horizontal, 36)
         .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(.background)
-        .onAppear {
-            isAppActive = NSApplication.shared.isActive
-            model.loadIfNeeded()
-        }
-        // Previews tick once a minute only while the app is active and not minimized.
+        .onAppear { isAppActive = NSApplication.shared.isActive }
+        // The preview ticks once a minute only while the app is active and not minimized.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in isAppActive = true }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in isAppActive = false }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didMiniaturizeNotification)) { _ in isAppActive = false }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didDeminiaturizeNotification)) { _ in isAppActive = NSApplication.shared.isActive }
-        .alert(zh ? "无法读取或保存城市" : "Couldn’t read or save cities", isPresented: isShowingError) {
-            Button(zh ? "好" : "OK") { model.errorMessage = nil }
-        } message: { Text(model.errorMessage ?? "") }
     }
 
-    private var isShowingError: Binding<Bool> {
-        Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })
+    /// The real small widget, showing the first default city for this Mac's time zone.
+    private func preview(date: Date) -> some View {
+        WidgetPreviewCard(snapshot: ClockSnapshot(date: date,
+                                                  cities: CitySelection.defaults(size: .small, reference: reference, at: date),
+                                                  reference: reference),
+                          family: .small)
+            .accessibilityHidden(true)
     }
 
-    private func editor(date: Date) -> some View {
-        HStack(spacing: 0) {
-            CityBrowserView(model: model, date: date).frame(width: 420)
-            Divider()
-            CitySelectionView(model: model, date: date).frame(maxWidth: .infinity)
+    private var instructions: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(ClockText(locale).title).font(.system(size: 22, weight: .semibold, design: .rounded))
+            Text(zh ? "城市在桌面上的小组件里选择。" : "Choose cities right on your desktop.")
+                .foregroundStyle(.secondary)
+            step(1, zh ? "右键点按桌面，选择“编辑小组件…”，添加“世界时钟”。"
+                       : "Right-click the desktop, choose Edit Widgets…, and add World Clock.")
+            step(2, zh ? "右键点按小组件，选择“编辑‘世界时钟’”。"
+                       : "Right-click the widget and choose Edit “World Clock”.")
+            step(3, zh ? "搜索或选择城市，小组件会立即更新。"
+                       : "Search or pick a city. The widget updates right away.")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var topBar: some View {
-        HStack {
-            Text(ClockText(locale).title).font(.system(size: 15, weight: .semibold))
-            Spacer()
-            Picker(zh ? "小组件尺寸" : "Widget size", selection: Binding(
-                get: { model.size }, set: { model.selectSize($0) })) {
-                ForEach(WidgetSize.allCases, id: \.self) { value in
-                    Text(sizeLabel(value)).tag(value)
-                }
-            }
-            .pickerStyle(.segmented).labelsHidden().fixedSize()
-        }
-        // The window's title bar is transparent; leave room for the traffic-light buttons.
-        .padding(.leading, 84).padding(.trailing, 18).frame(height: 52)
-    }
-
-    private func sizeLabel(_ family: WidgetSize) -> String {
-        switch family {
-        case .small: zh ? "小" : "Small"
-        case .medium: zh ? "中" : "Medium"
-        case .large: zh ? "大" : "Large"
+    private func step(_ number: Int, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("\(number)")
+                .font(.system(size: 11, weight: .bold).monospacedDigit())
+                .frame(width: 20, height: 20)
+                .background(Color.accentColor.opacity(0.15), in: Circle())
+            Text(text).font(.callout).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

@@ -25,12 +25,12 @@ targets:
   WorldClock:
     type: application
     platform: macOS
-    sources: [Sources/App, Sources/Core, Sources/Storage, Sources/Presentation]
+    sources: [Sources/App, Sources/Core, Sources/Presentation]
     info:
       path: Sources/App/Info.plist
       properties:
         # LaunchServices must suppress the Dock tile before widget URLs reach the delegate.
-        # Explicit editor launches promote the app to .regular in showEditor().
+        # Explicit launches promote the app to .regular in showWindow().
         LSUIElement: true
         CFBundleURLTypes:
           - CFBundleURLName: com.ac1982.worldclock.cities
@@ -39,7 +39,6 @@ targets:
       path: Sources/App/WorldClock.entitlements
       properties:
         com.apple.security.app-sandbox: true
-        com.apple.security.temporary-exception.files.home-relative-path.read-write: ["/Library/Application Support/WorldClockShared/"]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ac1982.worldclock
@@ -55,7 +54,7 @@ targets:
   WorldClockWidget:
     type: app-extension
     platform: macOS
-    sources: [Sources/Widget, Sources/Core, Sources/Storage, Sources/Presentation]
+    sources: [Sources/Widget, Sources/Core, Sources/Presentation]
     info:
       path: Sources/Widget/Info.plist
       properties:
@@ -66,7 +65,6 @@ targets:
       path: Sources/Widget/WorldClockWidget.entitlements
       properties:
         com.apple.security.app-sandbox: true
-        com.apple.security.temporary-exception.files.home-relative-path.read-only: ["/Library/Application Support/WorldClockShared/"]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ac1982.worldclock.widget
@@ -78,10 +76,9 @@ targets:
     sources:
       - Tests
       - Sources/Core
-      - Sources/Storage
-      - Sources/App/Editor/CityEditorModel.swift
-      - Sources/App/Editor/EditorRefreshSchedule.swift
+      - Sources/App/PreviewRefreshSchedule.swift
       - Sources/App/AppLaunchPolicy.swift
+      - Sources/Widget/CityOptionsProvider.swift
       - Sources/Widget/SelectCitiesIntent.swift
       - Sources/Widget/WidgetSize+WidgetKit.swift
     settings:
@@ -91,7 +88,7 @@ targets:
   ClockSnapshots:
     type: tool
     platform: macOS
-    sources: [Snapshots, Sources/Core, Sources/Presentation, Sources/App/ContentView.swift, Sources/App/Editor]
+    sources: [Snapshots, Sources/Core, Sources/Presentation, Sources/App/ContentView.swift, Sources/App/PreviewRefreshSchedule.swift]
     settings:
       base:
         PRODUCT_NAME: clock-snapshots

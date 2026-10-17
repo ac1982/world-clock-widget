@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Keep the same view identity across activation changes, with no repeating work while inactive.
-struct EditorRefreshSchedule: SwiftUI.TimelineSchedule {
+struct PreviewRefreshSchedule: SwiftUI.TimelineSchedule {
     let active: Bool
 
     func entries(from startDate: Date, mode: TimelineScheduleMode) -> AnySequence<Date> {

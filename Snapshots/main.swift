@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // Renders the widget views to PNG so the design can be reviewed without the desktop.
-// Usage: clock-snapshots <output-dir> [--picker] [--icon]
+// Usage: clock-snapshots <output-dir> [--app-window] [--icon]
 
 let outDir = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? "docs", isDirectory: true)
 try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
@@ -13,35 +13,20 @@ let fixed = try! Date("2026-10-17T11:42:00Z", strategy: .iso8601) // 19:42 SGT
 let cities = CityCatalog.defaults(relativeTo: singapore, at: fixed)
 let snapshot = ClockSnapshot(date: fixed, cities: cities, reference: singapore)
 
-if CommandLine.arguments.contains("--picker") {
+if CommandLine.arguments.contains("--app-window") {
     MainActor.assumeIsolated {
         for (mode, scheme) in [("light", ColorScheme.light), ("dark", ColorScheme.dark)] {
-            writePicker(scheme: scheme, name: "city-picker-\(mode).png")
+            writeAppWindow(scheme: scheme, name: "app-window-\(mode).png")
         }
     }
 }
 
-/// Rendering fixtures never read or modify the user's real city selections.
-struct SnapshotRepository: CitySelectionRepository {
-    func read() throws -> SelectionSettings {
-        SelectionSettings(selections: ["small": ["losangeles"]], recentIDs: ["losangeles", "london"])
-    }
-    func save(ids: [String], size: WidgetSize) throws -> SelectionSettings { try read() }
-}
-
-@MainActor
-func previewModel() -> CityEditorModel {
-    let model = CityEditorModel(repository: SnapshotRepository(), reference: singapore, now: { fixed }, reloadWidgets: {})
-    model.loadIfNeeded()
-    return model
-}
-
 /// Native controls and scroll views need AppKit rendering rather than ImageRenderer.
 @MainActor
-func writePicker(scheme: ColorScheme, name: String) {
+func writeAppWindow(scheme: ColorScheme, name: String) {
     let app = NSApplication.shared
     app.setActivationPolicy(.prohibited)
-    let view = NSHostingView(rootView: ContentView(model: previewModel(), previewDate: fixed)
+    let view = NSHostingView(rootView: ContentView(previewDate: fixed, reference: singapore)
         .environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "en_US")))
     let rect = NSRect(origin: .zero, size: ContentView.windowSize)
     let window = NSWindow(contentRect: rect, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -49,9 +34,9 @@ func writePicker(scheme: ColorScheme, name: String) {
     view.frame = rect
     view.layoutSubtreeIfNeeded()
     window.displayIfNeeded()
-    guard let bitmap = view.bitmapImageRepForCachingDisplay(in: rect) else { fatalError("picker render failed") }
+    guard let bitmap = view.bitmapImageRepForCachingDisplay(in: rect) else { fatalError("app window render failed") }
     view.cacheDisplay(in: rect, to: bitmap)
-    guard let data = bitmap.representation(using: .png, properties: [:]) else { fatalError("picker PNG failed") }
+    guard let data = bitmap.representation(using: .png, properties: [:]) else { fatalError("app window PNG failed") }
     let url = outDir.appendingPathComponent(name)
     try! data.write(to: url)
     print(url.path)

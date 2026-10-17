@@ -12,6 +12,6 @@ xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Relea
 python3 scripts/check-widget-metadata.py build/Build/Products/Release/WorldClock.app
 xcodebuild -project WorldClock.xcodeproj -scheme ClockSnapshots -derivedDataPath build \
   -destination 'platform=macOS,arch=arm64' build -quiet
-build/Build/Products/Debug/clock-snapshots build/snapshots --picker
+build/Build/Products/Debug/clock-snapshots build/snapshots --app-window
 git diff --check
 git diff --cached --check

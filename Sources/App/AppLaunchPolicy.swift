@@ -6,24 +6,25 @@ struct AppLaunchPolicy {
     enum Action: Equatable {
         /// Do nothing.
         case none
-        /// Show the editor, opening the route in the URL when there is one.
-        case showEditor(URL?)
-        /// A widget click while the editor exists: hide it but keep its drafts.
-        case keepEditorInactive
+        /// Show the app window.
+        case showWindow
+        /// A widget click while the window exists: hide it again.
+        case keepWindowInactive
         /// A widget click started the app: quit without showing anything.
         case terminate
     }
 
-    /// Any URL means macOS launched the app for a link, so the default launch must not show the editor too.
+    /// Any URL means macOS launched the app for a link, so the default launch must not show the window too.
     private var receivedURL = false
 
     func didFinish(isDefaultLaunch: Bool) -> Action {
-        !receivedURL && isDefaultLaunch ? .showEditor(nil) : .none
+        !receivedURL && isDefaultLaunch ? .showWindow : .none
     }
 
-    mutating func open(_ urls: [URL], hasEditor: Bool) -> Action {
+    /// `worldclock://cities` links from earlier versions still open the window; widget clicks never do.
+    mutating func open(_ urls: [URL], hasWindow: Bool) -> Action {
         receivedURL = true
-        if let url = urls.first(where: { EditorRoute(url: $0) != nil }) { return .showEditor(url) }
-        return hasEditor ? .keepEditorInactive : .terminate
+        if urls.contains(where: { EditorRoute(url: $0) != nil }) { return .showWindow }
+        return hasWindow ? .keepWindowInactive : .terminate
     }
 }
