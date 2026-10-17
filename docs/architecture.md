@@ -28,8 +28,9 @@ flowchart LR
   prefixes, substrings and zone-name matches.
 - Ordinary widget clicks use `worldclock://display`. AppKit owns window creation, so this route is consumed
   without creating a window. A host launched solely for this route exits immediately.
-  `LSUIElement = true` makes LaunchServices start the host without a Dock tile. Only `showWindow` promotes it
-  to `.regular`. Setting the policy after launch would be too late to prevent the initial Dock flash.
+  `LSUIElement = true` makes LaunchServices start the host without a Dock tile, and the app never changes that:
+  it only hosts the widget, and its one window is a short note. Setting the policy after launch would be too late
+  to prevent the initial Dock flash.
   URL delivery can follow `applicationDidFinishLaunching`, especially on double-clicks. That callback must
   check `NSApplication.launchIsDefaultUserInfoKey` before treating a launch as an explicit request;
   the absence of an already-received URL alone is insufficient.

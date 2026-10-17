@@ -1,15 +1,17 @@
 import AppKit
 import SwiftUI
 
-/// The app's only window. Cities are chosen in Edit Widget, so this explains how,
-/// next to a live preview of a small widget.
+/// The app's only window: a short note that this app just provides the widget, the steps to add it
+/// and choose cities in Edit Widget, and a live preview of a small widget.
 struct ContentView: View {
     /// Fixed window size, shared with the AppKit window and the snapshot tool.
-    static let windowSize = CGSize(width: 600, height: 300)
+    static let windowSize = CGSize(width: 620, height: 340)
 
     /// A fixed instant for snapshot rendering; nil shows the live time.
     var previewDate: Date?
     var reference: TimeZone = .autoupdatingCurrent
+    /// Called by the OK button; the app quits.
+    var onDone: () -> Void = {}
     @Environment(\.locale) private var locale
     // This view is hosted in an AppKit window, outside a SwiftUI Window scene.
     @State private var isAppActive = NSApplication.shared.isActive
@@ -49,15 +51,20 @@ struct ContentView: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(ClockText(locale).title).font(.system(size: 22, weight: .semibold, design: .rounded))
-            Text(zh ? "城市在桌面上的小组件里选择。" : "Choose cities right on your desktop.")
-                .foregroundStyle(.secondary)
+            Text(zh ? "世界时钟小组件" : "World Clock Widget").font(.system(size: 22, weight: .semibold, design: .rounded))
+            Text(zh ? "此应用只提供桌面小组件，无需打开。" : "This app only provides the desktop widget. You never need to open it.")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             step(1, zh ? "右键点按桌面，选择“编辑小组件…”，添加“世界时钟”。"
                        : "Right-click the desktop, choose Edit Widgets…, and add World Clock.")
             step(2, zh ? "右键点按小组件，选择“编辑‘世界时钟’”。"
                        : "Right-click the widget and choose Edit “World Clock”.")
             step(3, zh ? "搜索或选择城市，小组件会立即更新。"
                        : "Search or pick a city. The widget updates right away.")
+            HStack {
+                Spacer()
+                Button(zh ? "好" : "OK", action: onDone)
+                    .keyboardShortcut(.defaultAction)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

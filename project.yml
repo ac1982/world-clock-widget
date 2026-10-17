@@ -29,8 +29,8 @@ targets:
     info:
       path: Sources/App/Info.plist
       properties:
-        # LaunchServices must suppress the Dock tile before widget URLs reach the delegate.
-        # Explicit launches promote the app to .regular in showWindow().
+        # The app only hosts the widget: it never has a Dock tile, and LaunchServices
+        # must know that before widget URLs reach the delegate.
         LSUIElement: true
         CFBundleURLTypes:
           - CFBundleURLName: com.ac1982.worldclock.cities
@@ -44,7 +44,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.ac1982.worldclock
         PRODUCT_NAME: WorldClock
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: World Clock
+        INFOPLIST_KEY_CFBundleDisplayName: World Clock Widget
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         ENABLE_HARDENED_RUNTIME: YES

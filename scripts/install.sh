@@ -5,7 +5,9 @@ cd "${0:A:h}/.."
 xcodegen generate -q
 xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release -derivedDataPath build build -quiet
 python3 scripts/check-widget-metadata.py build/Build/Products/Release/WorldClock.app
-APP_DEST="$HOME/Applications/WorldClock.app"
+APP_DEST="$HOME/Applications/World Clock Widget.app"
+# Earlier versions installed under this name; remove it so only one copy hosts the widget.
+LEGACY_APP="$HOME/Applications/WorldClock.app"
 mkdir -p "$HOME/Applications"
 INSTALL_STAGE=$(mktemp -d "$HOME/Applications/.WorldClock-install.XXXXXX")
 cleanup() {
@@ -36,6 +38,10 @@ if pgrep -x WorldClock >/dev/null; then
 fi
 if [[ -e "$APP_DEST" ]]; then mv "$APP_DEST" "$INSTALL_STAGE/previous.app"; fi
 mv "$INSTALL_STAGE/WorldClock.app" "$APP_DEST"
+if [[ -e "$LEGACY_APP" ]]; then
+  "$LSREG" -u "$LEGACY_APP" 2>/dev/null || true
+  mv "$LEGACY_APP" "$INSTALL_STAGE/legacy.app"
+fi
 "$LSREG" -f "$APP_DEST"
 for attempt in {1..3}; do
   if open "$APP_DEST"; then break; fi

@@ -31,7 +31,7 @@ brew install xcodegen
 ```
 
 The script generates the Xcode project, builds Release, checks the widget's compiled intent metadata,
-and installs the app at `~/Applications/WorldClock.app`. Local builds are ad-hoc signed and sandboxed;
+and installs the app at `~/Applications/World Clock Widget.app`, removing an older `WorldClock.app` there. Local builds are ad-hoc signed and sandboxed;
 an Apple Developer account is not required for this configuration.
 
 Right-click the desktop → **Edit Widgets…** → search **World Clock**, then add a size.
@@ -43,10 +43,11 @@ Right-click a widget → **Edit “World Clock”**. Type in **Search cities** t
 which otherwise shows popular cities grouped by region (your own region first) with each city's current time.
 Each widget keeps its own cities; with none picked, it shows default cities in other time zones.
 
-This is the only place cities are chosen. Opening the World Clock app shows these steps next to a live
-widget preview; the app quits when its window closes, and widgets keep working without it.
+This is the only place cities are chosen. The **World Clock Widget** app exists only because macOS ships
+widgets inside an app: it never appears in the Dock, and opening it just shows these steps next to a live
+widget preview, then quits. Deleting the app removes the widget.
 
-![World Clock app](docs/app-window-light.png)
+![World Clock Widget app](docs/app-window-light.png)
 
 City IDs stay stable, so picks survive updates. Invalid cities are ignored and duplicates are removed
 while preserving order.

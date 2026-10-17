@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Own window creation explicitly: SwiftUI's automatic launch window would also appear on widget taps.
 ///
+/// The app only hosts the widget, so it never appears in the Dock (LSUIElement) and has one small note window.
+///
 /// How the app reacts to each way it can be started:
 /// - Opened from Finder/Dock/Spotlight, or by an old `worldclock://cities` link: show the window.
 /// - Opened by a widget click (`worldclock://display`): quit at once, or hide a window that is already open.
@@ -71,9 +73,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showWindow() {
         suppressPassiveActivation = false
-        // Start as an agent (LSUIElement) so passive widget launches never flash in the Dock.
-        // Only an explicit request promotes the app to a normal Dock application.
-        NSApplication.shared.setActivationPolicy(.regular)
         if window == nil { window = makeWindow() }
         // Wait until AppKit has completed launch/activation-policy changes before presenting.
         DispatchQueue.main.async { [weak self] in
@@ -87,12 +86,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: ContentView.windowSize),
                               styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
-        window.title = "World Clock"
+        window.title = "World Clock Widget"
         window.identifier = NSUserInterfaceItemIdentifier("main")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
-        window.contentViewController = NSHostingController(rootView: ContentView())
+        window.contentViewController = NSHostingController(rootView: ContentView(onDone: { NSApplication.shared.terminate(nil) }))
         window.center()
         return window
     }
