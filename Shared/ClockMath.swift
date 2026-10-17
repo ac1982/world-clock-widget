@@ -79,6 +79,34 @@ enum ClockMath {
             .weekday(wide ? .wide : .abbreviated))
     }
 
+    /// `count` dates on the quarter-hour grid, starting with the quarter hour containing `date`.
+    static func quarterHourDates(from date: Date, count: Int) -> [Date] {
+        let q: TimeInterval = 15 * 60
+        let start = (date.timeIntervalSince1970 / q).rounded(.down) * q
+        return (0 ..< count).map { Date(timeIntervalSince1970: start + Double($0) * q) }
+    }
+
+    /// Hours and minutes only ("7:42" / "19:42"), honoring the 12/24-hour preference. Discrete, so it can drive a
+    /// self-updating `Text(.currentDate, format:)`.
+    static func digitsStyle(zone: TimeZone, locale: Locale) -> Date.FormatStyle {
+        Date.FormatStyle(locale: locale, calendar: Calendar(identifier: .gregorian), timeZone: zone)
+            .hour(.defaultDigits(amPM: .omitted)).minute(.twoDigits)
+    }
+
+    /// Just the day period ("PM" / "下午").
+    static func periodStyle(zone: TimeZone, locale: Locale) -> Date.VerbatimFormatStyle {
+        Date.VerbatimFormatStyle(format: "\(dayPeriod: .standard(.abbreviated))", locale: locale,
+                                 timeZone: zone, calendar: Calendar(identifier: .gregorian))
+    }
+
+    /// Whether the locale writes the day period before the digits (e.g. Chinese "下午7:42").
+    static func periodLeads(_ locale: Locale) -> Bool {
+        let pattern = DateFormatter.dateFormat(fromTemplate: "jmm", options: 0, locale: locale) ?? ""
+        guard let a = pattern.firstIndex(where: { "abB".contains($0) }), let h = pattern.firstIndex(where: { "hHkK".contains($0) })
+        else { return false }
+        return a < h
+    }
+
     /// Whether the locale (including the user's 24-Hour Time setting) shows a day period like AM/PM.
     static func uses12HourClock(_ locale: Locale) -> Bool {
         let pattern = DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: locale) ?? ""

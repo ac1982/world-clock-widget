@@ -64,7 +64,11 @@ targets:
   WorldClockTests:
     type: bundle.unit-test
     platform: macOS
-    sources: [Tests, Shared]
+    sources:
+      - Tests
+      - Shared
+      - Widget/CityEntity.swift
+      - Widget/SelectCitiesIntent.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ac1982.worldclock.tests

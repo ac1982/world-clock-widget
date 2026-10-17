@@ -16,18 +16,21 @@ struct ClockProvider: AppIntentTimelineProvider {
         ClockEntry(date: .now, cities: cities(for: configuration, family: context.family))
     }
 
-    /// One entry per minute, aligned to the minute boundary, for the next 2 hours. WidgetKit swaps entries
-    /// itself, so the clock ticks without waking the extension; the process only runs again to refill.
+    /// The digits tick by themselves (`Text(.currentDate, format:)`), so entries only carry the slow-moving
+    /// parts: day/night glyph, sky, "Today/Tomorrow" and the day ribbon. Every UTC offset is a multiple of
+    /// 15 minutes, so quarter-hour entries catch every local midnight and phase change exactly.
+    /// 24 entries cover 6 hours; each entry is archived (rendered) once, so fewer entries = less CPU.
     func timeline(for configuration: SelectCitiesIntent, in context: Context) async -> Timeline<ClockEntry> {
         let list = cities(for: configuration, family: context.family)
-        let start = Calendar.current.dateInterval(of: .minute, for: .now)?.start ?? .now
-        let entries = (0 ..< 120).map { ClockEntry(date: start.addingTimeInterval(Double($0) * 60), cities: list) }
+        let entries = ClockMath.quarterHourDates(from: .now, count: 24).map { ClockEntry(date: $0, cities: list) }
         return Timeline(entries: entries, policy: .atEnd)
     }
 
     private func cities(for configuration: SelectCitiesIntent?, family: WidgetFamily) -> [City] {
-        let picked = (configuration?.cities ?? []).compactMap(\.city)
-        return picked.isEmpty ? CityCatalog.defaults(relativeTo: .autoupdatingCurrent) : picked
+        let ids = configuration?.pickedIDs(for: family) ?? []
+        let list = CityCatalog.resolve(pickedIDs: ids, capacity: CardFamily(family).capacity, local: .autoupdatingCurrent)
+        clockLog.debug("config \(ids, privacy: .public) -> \(list.map(\.id), privacy: .public)")
+        return list
     }
 }
 
@@ -36,7 +39,7 @@ struct WorldClockEntryView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        let snapshot = ClockSnapshot(date: entry.date, cities: entry.cities, reference: .autoupdatingCurrent)
+        let snapshot = ClockSnapshot(date: entry.date, cities: entry.cities, reference: .autoupdatingCurrent, live: true)
         let card = CardFamily(family)
         ClockCard(snapshot: snapshot, family: card)
             .containerBackground(for: .widget) {

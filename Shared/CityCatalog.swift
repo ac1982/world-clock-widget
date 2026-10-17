@@ -99,6 +99,14 @@ enum CityCatalog {
         return elsewhere + same
     }
 
+    /// What a widget shows for a configuration: the picked cities (unknown ids dropped), or the defaults
+    /// when nothing usable was picked. Small widgets show only the first.
+    static func resolve(pickedIDs: [String], capacity: Int, local: TimeZone, at date: Date = .now) -> [City] {
+        let picked = pickedIDs.compactMap(city(id:))
+        let list = picked.isEmpty ? defaults(relativeTo: local, at: date) : picked
+        return Array(list.prefix(max(1, capacity)))
+    }
+
     /// Case-, diacritic- and width-insensitive search over both names and the zone identifier.
     static func search(_ query: String) -> [City] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)

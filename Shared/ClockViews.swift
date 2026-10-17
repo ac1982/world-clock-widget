@@ -32,6 +32,8 @@ struct ClockSnapshot: Sendable {
     var date: Date
     var cities: [City]
     var reference: TimeZone = .autoupdatingCurrent
+    /// In the widget the digits are self-updating text; previews and PNGs draw `date` statically.
+    var live = false
 }
 
 // MARK: - Palette
@@ -84,13 +86,28 @@ struct ClockTime: View {
     let zone: TimeZone
     var size: CGFloat
     var weight: Font.Weight = .medium
+    var live = false
+    var alignment: TextAlignment = .leading
     @Environment(\.locale) private var locale
 
     var body: some View {
-        Text(attributed)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-            .contentTransition(.numericText())
+        Group {
+            if live { liveText } else { Text(attributed) }
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .multilineTextAlignment(alignment)
+    }
+
+    private var mainFont: Font { .system(size: size, weight: weight, design: .rounded).monospacedDigit() }
+    private var periodFont: Font { .system(size: max(10, size * 0.36), weight: .semibold, design: .rounded) }
+
+    /// Rendered and ticked by the system: no timeline entry per minute needed.
+    private var liveText: Text {
+        let digits = Text(.currentDate, format: ClockMath.digitsStyle(zone: zone, locale: locale)).font(mainFont)
+        guard ClockMath.uses12HourClock(locale) else { return digits }
+        let period = Text(.currentDate, format: ClockMath.periodStyle(zone: zone, locale: locale)).font(periodFont)
+        return ClockMath.periodLeads(locale) ? period + digits : digits + Text(" ").font(periodFont) + period
     }
 
     private var attributed: AttributedString {
@@ -189,7 +206,8 @@ struct SmallCard: View {
                 .font(.system(size: 15, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            ClockTime(date: snapshot.date, zone: zone, size: 40, weight: .medium)
+            ClockTime(date: snapshot.date, zone: zone, size: 40, weight: .medium, live: snapshot.live)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, -2)
                 .widgetAccentable()
             Text("\(text.relativeDay(delta)) · \(ClockMath.weekdayString(snapshot.date, in: zone, locale: locale, wide: true))")
@@ -231,7 +249,8 @@ struct CityRow: View {
                 DayRibbon(fraction: ClockMath.dayFraction(in: zone, at: snapshot.date))
                     .frame(width: 64, height: 5)
             }
-            ClockTime(date: snapshot.date, zone: zone, size: timeSize, weight: .medium)
+            ClockTime(date: snapshot.date, zone: zone, size: timeSize, weight: .medium,
+                      live: snapshot.live, alignment: .trailing)
                 .foregroundStyle(.primary)
                 // Fixed column so ribbons and digits line up from row to row.
                 .frame(width: timeSize * (ClockMath.uses12HourClock(locale) ? 4.15 : 2.8), alignment: .trailing)

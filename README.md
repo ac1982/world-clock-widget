@@ -30,7 +30,14 @@ captions are Chinese (东京 · 今天，+1小时). The widget supports full-col
 | `Snapshots/` | CLI that renders the cards to PNG: `clock-snapshots docs` |
 
 ## Timeline
-One entry per minute (aligned to the minute) for two hours, policy `.atEnd`: the clock ticks without waking the extension.
+Digits are self-updating `Text(.currentDate, format:)`, so the system ticks them. Entries only carry the slow parts
+(day/night, sky, Today/Tomorrow, ribbon): 24 quarter-hour entries = 6 hours per reload. Every UTC offset is a multiple of
+15 min, so the grid hits every local midnight exactly. The extension is idle (and usually exits) between reloads.
+
+## Configuration
+Small edits one `city`; medium/large edit a `cities` list (1–4 / 1–7), switched via `parameterSummary`.
+A list limited to exactly one item is stored by macOS as a bare entity, which App Intents then cannot decode back into an
+array ("Failed to build EntityIdentifier") – that made picked cities silently fall back to the defaults.
 
 ## Signing
 No Apple Development certificate / Xcode account on this Mac, so the project signs to run locally (ad-hoc, sandboxed).
