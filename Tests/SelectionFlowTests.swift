@@ -31,12 +31,10 @@ final class SelectionFlowTests: XCTestCase {
         XCTAssertTrue(CitySelection.validIDs(["tokyo"], limit: 0).isEmpty)
     }
 
-    func testRoutesRoundTripSourcesSizesAndRawZoneIDs() throws {
+    func testRoutesRoundTripSizesAndRawZoneIDs() throws {
         for size in WidgetSize.allCases {
-            for source in [SelectionSource.app, .widget] {
-                let route = EditorRoute(size: size, source: source, ids: ["tz:America/Argentina/Salta", "london"])
-                XCTAssertEqual(EditorRoute(url: route.url), route)
-            }
+            let route = EditorRoute(size: size, ids: ["tz:America/Argentina/Salta", "london"])
+            XCTAssertEqual(EditorRoute(url: route.url), route)
         }
     }
 
@@ -48,7 +46,10 @@ final class SelectionFlowTests: XCTestCase {
 
     func testLegacyRoutesAndUntrustedLinks() throws {
         let legacy = try XCTUnwrap(EditorRoute(url: URL(string: "worldclock://cities?family=medium&city=london&city=bogus&city=london&city=tokyo")!))
-        XCTAssertEqual(legacy.source, .app)
+        for source in ["app", "widget"] {
+            let link = try XCTUnwrap(URL(string: "worldclock://cities?family=small&source=\(source)&city=tokyo"))
+            XCTAssertEqual(EditorRoute(url: link), EditorRoute(size: .small, ids: ["tokyo"]), "Older links still open the editor")
+        }
         XCTAssertEqual(legacy.ids, ["london", "tokyo"])
         for string in ["https://example.com/cities?family=small", "worldclock://cities?family=wrong", "worldclock://cities?family=small&source=wrong"] {
             XCTAssertNil(EditorRoute(url: URL(string: string)!))

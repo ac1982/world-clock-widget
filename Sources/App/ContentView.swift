@@ -17,7 +17,6 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            if !model.canEdit { independentNotice }
             Group {
                 if let previewDate {
                     // Snapshot rendering uses a fixed instant instead of a ticking clock.
@@ -28,7 +27,7 @@ struct ContentView: View {
             }
             .transaction { $0.animation = nil }
             Divider()
-            if model.canEdit { EditorFooter(model: model) }
+            EditorFooter(model: model)
         }
         .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(.background)
@@ -58,19 +57,6 @@ struct ContentView: View {
         }
     }
 
-    private var independentNotice: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "info.circle")
-            Text(zh ? "此小组件使用独立城市。请在桌面右键小组件，选择“编辑小组件”来修改。" :
-                 "This widget uses its own cities. Right-click it on your desktop and choose Edit Widget to change them.")
-                .font(.callout)
-            Spacer()
-            Button(zh ? "编辑同尺寸公共配置" : "Edit shared selection") { model.editSharedSelection() }
-        }
-        .padding(16)
-        .background(.blue.opacity(0.08))
-    }
-
     private func sizeLabel(_ family: WidgetSize) -> String {
         switch family {
         case .small: zh ? "小号 · 1 城市" : "Small · 1 city"
@@ -98,7 +84,6 @@ struct ContentView: View {
                     Text(sizeLabel(value)).tag(value)
                 }
             }
-            .disabled(!model.canEdit)
             .pickerStyle(.segmented).labelsHidden().frame(width: 358)
         }
         .padding(.horizontal, 28).padding(.top, 30).padding(.bottom, 22)

@@ -63,7 +63,6 @@ struct CitySelectionView: View {
                 Image(systemName: "minus.circle").foregroundStyle(.secondary)
             }.help(zh ? "移除城市" : "Remove city")
         }
-        .disabled(!model.canEdit)
         .buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 9)
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 9))
         .draggable(city.id)

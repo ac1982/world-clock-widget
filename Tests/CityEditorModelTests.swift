@@ -78,26 +78,6 @@ final class CityEditorModelTests: XCTestCase {
         XCTAssertEqual(model.selected, ["losangeles"])
     }
 
-    @MainActor func testIndependentWidgetCannotAccidentallySaveSharedSettings() throws {
-        let repo = MemoryRepository()
-        var reloads = 0
-        let model = CityEditorModel(repository: repo) { reloads += 1 }
-        model.open(EditorRoute(size: .small, source: .widget, ids: ["london"]).url)
-        XCTAssertFalse(model.canSave)
-        model.toggle(try XCTUnwrap(CityCatalog.city(id: "tokyo")))
-        model.remove("london")
-        model.restoreDefaults()
-        model.selectSize(.medium)
-        model.apply()
-        XCTAssertEqual(model.size, .small)
-        XCTAssertEqual(model.selected, ["london"])
-        XCTAssertEqual(repo.writes, 0)
-        XCTAssertEqual(reloads, 0)
-        model.editSharedSelection()
-        XCTAssertTrue(model.canEdit)
-        XCTAssertEqual(model.selected, ["losangeles"])
-    }
-
     @MainActor func testSaveRefreshesOnlyAfterSuccessfulWriteAndCanRetry() throws {
         let repo = MemoryRepository()
         var reloads = 0

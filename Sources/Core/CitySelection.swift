@@ -1,13 +1,5 @@
 import Foundation
 
-/// The origin is also carried through widget links, so the editor never saves to the wrong target.
-enum SelectionSource: String, Sendable {
-    /// The shared, per-size list edited in the World Clock app.
-    case app
-    /// A list stored in one widget's own configuration (Edit Widget).
-    case widget
-}
-
 struct SelectionSettings: Codable, Equatable, Sendable {
     /// How many recently picked cities are remembered for the editor's RECENT row.
     static let recentLimit = 12

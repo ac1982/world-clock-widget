@@ -1,17 +1,13 @@
 import Foundation
 import Observation
 
-/// Owns editing rules and per-size drafts. SwiftUI and WidgetKit stay outside this model.
-///
-/// Two modes, chosen by `source`:
-/// - `.app`: edit the shared list for `size`. Each size keeps its own unsaved draft until the app quits.
-/// - `.widget`: show one widget's own cities read-only; the app cannot rewrite a widget's configuration.
+/// Owns editing rules and per-size drafts for the app's shared city lists.
+/// Each size keeps its own unsaved draft until the app quits. SwiftUI and WidgetKit stay outside this model.
 @MainActor @Observable
 final class CityEditorModel {
     // MARK: State read by the views
 
     private(set) var size: WidgetSize = .small
-    private(set) var source: SelectionSource = .app
     /// Recently saved city IDs, newest first.
     private(set) var recent: [String] = []
     /// True right after a successful Apply, until the selection changes again.
@@ -24,8 +20,6 @@ final class CityEditorModel {
     // MARK: Private state and dependencies
 
     private var drafts: [WidgetSize: [String]] = [:]
-    /// The cities of the widget that opened the editor in `.widget` mode.
-    private var independentIDs: [String] = []
     /// The last settings read from or written to the repository.
     private var settings = SelectionSettings()
     private var loaded = false
@@ -43,16 +37,14 @@ final class CityEditorModel {
 
     // MARK: Derived state
 
-    var selected: [String] { source == .widget ? independentIDs : drafts[size] ?? [] }
+    var selected: [String] { drafts[size] ?? [] }
     var cities: [City] { selected.compactMap(CityCatalog.city(id:)) }
-    var canEdit: Bool { source == .app }
-    var canSave: Bool { canEdit && !selected.isEmpty && selected != settings.selections[size.rawValue] }
+    var canSave: Bool { !selected.isEmpty && selected != settings.selections[size.rawValue] }
     var isSearching: Bool { !CitySearch.isBlank(query) }
 
     /// Whether tapping `city` would change anything. The small size always swaps its one city;
     /// larger sizes cannot add beyond capacity but can always remove.
     func canToggle(_ city: City) -> Bool {
-        guard canEdit else { return false }
         let isSelected = selected.contains(city.id)
         return isSelected || size == .small || selected.count < size.capacity
     }
@@ -67,7 +59,6 @@ final class CityEditorModel {
     }
 
     func selectSize(_ value: WidgetSize) {
-        guard canEdit else { return }
         size = value
         ensureDraft()
         query = ""
@@ -79,25 +70,15 @@ final class CityEditorModel {
         loaded = true
         readSettings()
         size = route.size
-        source = route.source
-        independentIDs = route.ids
-        // Existing drafts win; otherwise saved settings win over potentially stale widget links.
-        ensureDraft(fallback: route.source == .app ? route.ids : [])
+        // Existing drafts win; otherwise saved settings win over the link's potentially stale cities.
+        ensureDraft(fallback: route.ids)
         query = ""
-        saved = false
-    }
-
-    /// Leave a widget's read-only list and edit the shared list for the same size.
-    func editSharedSelection() {
-        source = .app
-        ensureDraft()
         saved = false
     }
 
     // MARK: Editing the draft
 
     func toggle(_ city: City) {
-        guard canEdit else { return }
         var ids = selected
         if size == .small { ids = [city.id] }
         else if ids.contains(city.id) { ids.removeAll { $0 == city.id } }
@@ -123,7 +104,7 @@ final class CityEditorModel {
     /// Drag and drop: moves `id` to where `target` is. Returns false when nothing moved.
     @discardableResult
     func move(_ id: String, to target: String) -> Bool {
-        guard canEdit, let from = selected.firstIndex(of: id), let to = selected.firstIndex(of: target), from != to else { return false }
+        guard let from = selected.firstIndex(of: id), let to = selected.firstIndex(of: target), from != to else { return false }
         var ids = selected
         ids.insert(ids.remove(at: from), at: to)
         update(ids)
@@ -151,7 +132,6 @@ final class CityEditorModel {
 
     /// Single place that writes a draft: cleans the IDs and ignores no-op changes.
     private func update(_ ids: [String]) {
-        guard canEdit else { return }
         let valid = CitySelection.validIDs(ids, limit: size.capacity)
         guard valid != selected else { return }
         drafts[size] = valid

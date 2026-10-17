@@ -15,7 +15,6 @@ struct EditorFooter: View {
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
             Button(zh ? "默认城市" : "Defaults") { model.restoreDefaults() }
-                .disabled(!model.canEdit)
             Button(zh ? "应用到小组件" : "Apply to widgets") { model.apply() }
                 .buttonStyle(.borderedProminent).controlSize(.large)
                 .disabled(!model.canSave).keyboardShortcut(.return, modifiers: .command)

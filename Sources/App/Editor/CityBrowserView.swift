@@ -73,7 +73,6 @@ struct CityBrowserView: View {
                 .background(.blue.opacity(0.08), in: Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(!model.canEdit)
     }
 
     private func cityRow(_ city: City) -> some View {

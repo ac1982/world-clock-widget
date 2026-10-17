@@ -38,9 +38,8 @@ flowchart LR
   the absence of an already-received URL alone is insufficient.
   macOS can still briefly launch the host; this prevents Dock presentation, not all process activity on a click.
   Explicitly opening the app still shows its editor. Right-click **Edit Widget** remains macOS's native configuration UI.
-- `EditorRoute` carries size, ordered IDs and source for explicit or legacy editor links. Old links without a source are accepted as app links.
-  Independent-widget routes are read-only in the app because the app cannot rewrite an installed instance's
-  App Intent configuration. Switching to shared editing is explicit.
+- `EditorRoute` carries size and ordered IDs for explicit editor links. Older links may also carry `source=app` or
+  `source=widget`; the value is ignored, and any other value rejects the link.
 - `CityEditorModel` owns per-size drafts, capacity, ordering, save/error state and search results. Its repository
   and reload callback are injected. Opening or searching does not refresh WidgetKit; only a successful save does.
 - Editor drafts remain in memory until the app exits. They are not autosaved. Existing drafts take priority over
