@@ -8,19 +8,45 @@ struct ClockCardBackground: View {
 
     var body: some View {
         if family == .small, let clock = snapshot.clocks.first {
-            let phase = clock.phase
-            ZStack {
-                Sky.gradient(phase, dark: scheme == .dark)
-                if phase == .night { Stars().opacity(scheme == .dark ? 0.7 : 0.55) }
-                // Soft light from above, like the system's own widgets.
-                LinearGradient(colors: [.white.opacity(0.10), .clear], startPoint: .top, endPoint: .center)
-            }
+            GlowSky(clock: clock)
         } else {
             LinearGradient(
                 colors: scheme == .dark ? [Color(hex: 0x242C3A), Color(hex: 0x171D28)]
                                         : [Color(hex: 0xFCFDFE), Color(hex: 0xEAF0F5)],
                 startPoint: .top, endPoint: .bottom)
         }
+    }
+}
+
+/// The phase's sky gradient with a softly glowing sun or moon. It rises on the left,
+/// is highest mid-way and sets on the right, moving with each timeline entry.
+struct GlowSky: View {
+    let clock: CityClockState
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        GeometryReader { geo in
+            let sky = SkyBody(dayFraction: clock.dayFraction)
+            // Unit coordinates: x travels 15% → 85% of the width; y rises from 62% to 32% of the height.
+            let x = 0.15 + 0.7 * sky.progress
+            let y = 0.62 - 0.3 * sky.elevation
+            ZStack {
+                Sky.gradient(clock.phase, dark: scheme == .dark)
+                if !sky.isSun { Stars().opacity(0.6) }
+                RadialGradient(colors: [glowColor(sky).opacity(sky.isSun ? 0.75 : 0.35), .clear],
+                               center: UnitPoint(x: x, y: y),
+                               startRadius: 2, endRadius: sky.isSun ? 95 : 60)
+                Circle()
+                    .fill(sky.isSun ? Color(hex: 0xFFF1C9) : Color(hex: 0xEEF1FF))
+                    .frame(width: sky.isSun ? 22 : 16, height: sky.isSun ? 22 : 16)
+                    .shadow(color: (sky.isSun ? Color(hex: 0xFFD27A) : .white).opacity(0.9), radius: 10)
+                    .position(x: geo.size.width * x, y: geo.size.height * y)
+            }
+        }
+    }
+
+    private func glowColor(_ sky: SkyBody) -> Color {
+        sky.isSun ? Color(hex: 0xFFE3A0) : .white
     }
 }
 

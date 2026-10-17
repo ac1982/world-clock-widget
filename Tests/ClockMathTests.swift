@@ -153,3 +153,35 @@ final class CityCatalogTests: XCTestCase {
         XCTAssertNil(CityCatalog.city(id: "nope"))
     }
 }
+
+final class SkyBodyTests: XCTestCase {
+    private func body(_ hour: Int, _ minute: Int = 0) -> SkyBody {
+        SkyBody(dayFraction: ClockMath.dayFraction(hour: hour, minute: minute))
+    }
+
+    func testSunRisesAtDawnAndSetsAtEndOfDusk() {
+        XCTAssertEqual(body(5), SkyBody(dayFraction: 5.0 / 24))
+        XCTAssertTrue(body(5).isSun)
+        XCTAssertEqual(body(5).progress, 0, accuracy: 0.0001)
+        XCTAssertTrue(body(19, 29).isSun)
+        XCTAssertFalse(body(19, 30).isSun)
+        XCTAssertEqual(body(19, 30).progress, 0, accuracy: 0.0001, "The moon rises when the sun sets")
+        XCTAssertEqual(body(4, 59).progress, 1, accuracy: 0.01)
+    }
+
+    func testHighestPointsAreMidDayAndMidNight() {
+        XCTAssertEqual(body(12, 15).progress, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(body(12, 15).elevation, 1, accuracy: 0.0001)
+        XCTAssertEqual(body(0, 15).progress, 0.5, accuracy: 0.0001, "Night runs 19:30 → 05:00 across midnight")
+        XCTAssertEqual(body(5).elevation, 0, accuracy: 0.0001)
+    }
+
+    func testSunMatchesDayPhaseIconsForEveryMinute() {
+        for minute in 0..<ClockMath.minutesPerDay {
+            let hour = minute / 60, m = minute % 60
+            let sky = body(hour, m)
+            XCTAssertEqual(sky.isSun, DayPhase(hour: hour, minute: m) != .night, "\(hour):\(m)")
+            XCTAssertTrue((0...1).contains(sky.progress), "\(hour):\(m)")
+        }
+    }
+}
