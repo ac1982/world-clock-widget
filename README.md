@@ -1,5 +1,10 @@
 # World Clock Widget
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark.png">
+  <img src="docs/brand/logo-light.png" alt="World Clock — a blue globe and clock with a golden sun" width="540">
+</picture>
+
 A native macOS desktop world clock with searchable cities, local times and a quiet day/night design.
 Built with SwiftUI, WidgetKit and App Intents. No third-party runtime dependencies, network calls or background polling loop.
 
@@ -87,6 +92,11 @@ Unit tests alone cannot reproduce the widget host's environment or macOS sandbox
 | `scripts/` | Build checks, local installation and diagnostics |
 
 See [architecture and invariants](docs/architecture.md) for data flow, compatibility boundaries and validation guidance.
+
+The app icon and matching logos are in [`docs/brand/`](docs/brand/), with their
+[image-generation prompts](docs/brand/prompts.json). `AppIconV2` contains the macOS icon exports;
+the earlier icon assets are preserved. Logo masters are used only in documentation and are not bundled
+with the app or widget.
 
 ## Resource use
 

@@ -1,0 +1,27 @@
+{
+  "mode": "Built-in image_gen",
+  "identity": "World Clock",
+  "assets": [
+    {
+      "file": "app-icon-v2.png",
+      "kind": "logo-brand",
+      "transparent_background": true,
+      "prompt": "Use case: logo-brand.\nAsset type: finished macOS app icon for the existing World Clock Widget project.\nPrimary request: design one beautiful, distinctive, restrained world-clock app icon. A deep midnight-blue rounded-square macOS tile carries a single sculpted ivory clock-globe emblem: a clean circular dial, one elegant curved longitude line suggesting the Earth, and two unmistakable clock hands showing 10:10. One small warm golden sun dot rests along the ring near two o'clock, suggesting daylight across time zones. Keep the visual idea very simple and legible at 32 pixels.\nStyle: premium native macOS utility, precise geometric curves, subtle dimensional ceramic/glass finish, quiet soft lighting and extremely restrained depth, not a cartoon and not a photorealistic scene.\nPalette: midnight navy and luminous sky blue matching the app's night/day widgets, warm white emblem, single small muted golden accent.\nComposition: square 1024 by 1024 canvas, one centered icon tile occupying about 84% of the canvas, balanced macOS rounded corners, comfortable safe margins. The tile is fully opaque; outside the rounded tile is genuine transparency. The emblem occupies about 65% of the tile. Crisp clean edges.\nConstraints: production-ready standalone icon, no text, no letters, no numbers, no tiny tick marks, no continents, no map pins, no extra symbols, no stars, no mockup, no surrounding objects, no border frame, no watermark. Do not make an icon sheet."
+    },
+    {
+      "file": "logo-light.png",
+      "kind": "logo-brand",
+      "reference": "app-icon-v2.png",
+      "transparent_background": true,
+      "prompt": "Use case: logo-brand.\nAsset type: horizontal transparent brand logo for the macOS app World Clock, used in its repository header and project documentation.\nInput image 1 is the approved app icon and identity reference. Preserve this exact blue rounded tile, ivory globe-clock and small gold sun as the emblem.\nCreate one polished horizontal logo lockup: the reference icon at left, the exact words \"World Clock\" at right on one line. Set the words in an elegant, clear medium-weight contemporary sans serif, with precise kerning and generous breathing room. Text color solid deep midnight navy, suitable for a white or pale background. Keep the typography simple and editorial. Match the icon's color and shape; no redesign of the mark. Icon height roughly 1.5 times the capital letter height.\nComposition: wide landscape canvas close to 3:1, optically centered, compact useful artwork with modest transparent padding, all words fully visible. Render at high resolution.\nBackground: genuinely transparent, including all blank canvas around the logo. No white rectangular backdrop.\nConstraints: exact text \"World Clock\"; no additional text, no slogan, no mockup, no objects, no watermark, no alternate versions, no presentation board. One finished logo only."
+    },
+    {
+      "file": "logo-dark.png",
+      "kind": "precise-object-edit",
+      "reference": "logo-light.png",
+      "transparent_background": false,
+      "prompt": "Use case: precise-object-edit.\nAsset type: finished dark-mode repository header logo.\nInput image 1 is the approved original World Clock logo and is the edit target.\nChange the dark navy words \"World Clock\" to clean solid warm ivory (#FFF8E9). Put the entire logo on a perfectly uniform opaque deep charcoal background #0D1117. Preserve the original blue icon, exact words, bold sans serif letterforms, letter spacing, layout, canvas aspect ratio, sizes and positions. The type must be completely clean and flat, with smooth sharp anti-aliased contours and immaculate counters. Remove every speck, texture, fringe, ghost edge and stray mark. This is clean digital brand artwork, not distressed lettering.\nKeep the blue rounded-square globe-clock icon exactly as it is in the reference. The only changes from this reference are white text and a solid charcoal background. One horizontal logo, no extra text, no mockups."
+    }
+  ],
+  "exports": "AppIconV2.appiconset contains standard macOS icon slots, resized from app-icon-v2.png with macOS sips --resampleHeightWidth. Original AppIcon assets are preserved. Logo masters are documentation assets and are not bundled in the app or widget."
+}

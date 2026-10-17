@@ -46,7 +46,7 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         ENABLE_HARDENED_RUNTIME: YES
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIconV2
     dependencies:
       - target: WorldClockWidget
   WorldClockWidget:
