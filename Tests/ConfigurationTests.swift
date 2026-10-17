@@ -4,9 +4,8 @@ import XCTest
 
 /// Configuration → displayed city, including zones outside the curated list.
 final class ConfigurationTests: XCTestCase {
-    func testResizingIndependentWidgetPreservesSingleCity() {
+    func testResizingWidgetPreservesSingleCity() {
         let intent = SelectCitiesIntent(location: "losangeles")
-        intent.useAppSelection = false
         for family in [WidgetFamily.systemSmall, .systemMedium, .systemLarge, .systemSmall] {
             XCTAssertEqual(intent.selection(for: family).cities(for: WidgetSize(family), settings: .init(),
                 reference: sg, at: evening).map(\.id), ["losangeles"])

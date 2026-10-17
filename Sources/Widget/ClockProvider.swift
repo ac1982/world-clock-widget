@@ -3,7 +3,6 @@ import WidgetKit
 struct ClockEntry: TimelineEntry {
     let date: Date
     let cities: [City]
-    var source: SelectionSource = .app
 }
 
 struct ClockProvider: AppIntentTimelineProvider {
@@ -21,17 +20,17 @@ struct ClockProvider: AppIntentTimelineProvider {
     func timeline(for configuration: SelectCitiesIntent, in context: Context) async -> Timeline<ClockEntry> {
         let initial = entry(for: configuration, family: context.family, at: .now)
         let entries = TimelineSchedule.dates(from: initial.date).map {
-            ClockEntry(date: $0, cities: initial.cities, source: initial.source)
+            ClockEntry(date: $0, cities: initial.cities)
         }
         return Timeline(entries: entries, policy: .atEnd)
     }
 
     private func entry(for configuration: SelectCitiesIntent, family: WidgetFamily, at date: Date) -> ClockEntry {
         let selection = configuration.selection(for: family)
-        // Only widgets that follow the app need the shared settings file.
-        let settings = selection.source == .app ? readSharedSettings() : SelectionSettings()
+        // Only widgets without their own picked cities need the shared settings file.
+        let settings = selection.usesAppSelection ? readSharedSettings() : SelectionSettings()
         let cities = selection.cities(for: WidgetSize(family), settings: settings, reference: .autoupdatingCurrent, at: date)
-        return ClockEntry(date: date, cities: cities, source: selection.source)
+        return ClockEntry(date: date, cities: cities)
     }
 
     private func readSharedSettings() -> SelectionSettings {

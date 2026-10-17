@@ -36,9 +36,8 @@ an Apple Developer account is not required for this configuration.
 
 Right-click the desktop → **Edit Widgets…** → search **World Clock**, then add a size.
 Ordinary clicks on a widget do not open the city selector or flash an app icon in the Dock.
-To edit the widget, right-click it and choose
-**Edit “World Clock”**. Disable **Use app selection** to choose cities directly for that widget.
-To edit shared lists with the larger searchable editor, explicitly open World Clock from Applications,
+To choose a widget's city, right-click it, choose **Edit “World Clock”**, and pick a city.
+To set the cities for every widget you haven't customized, open World Clock from Applications,
 select cities, and choose **Apply to widgets**.
 The app quits when its last window closes. Widgets continue to work without it.
 
@@ -46,17 +45,19 @@ The app quits when its last window closes. Widgets continue to work without it.
 
 ## How selections work
 
-**Use app selection** is enabled by default. Saved cities apply to all widgets of that size following the app.
-Switching sizes in the editor preserves each size's unsaved draft until the app exits.
-The editor's Apply button saves only the currently selected size.
+A widget shows, in order of preference:
 
-To give one widget its own cities, right-click it → **Edit “World Clock”**, disable **Use app selection**,
-and use the native city picker. Ordinary widget clicks leave the clock in place and do not change selections.
-Shared lists remain available by explicitly opening the World Clock app.
+1. the cities picked in its own **Edit “World Clock”** settings;
+2. otherwise the World Clock app's saved list for that widget size;
+3. otherwise the default cities.
 
-Existing city IDs and the `city-selections.json` format remain compatible. Without a saved app selection,
-the widget keeps its native configured cities, or uses defaults if none are valid. Empty or invalid selections
-fall back to defaults; duplicates are removed while preserving order.
+In the app, switching sizes preserves each size's unsaved draft until the app exits, and **Apply to widgets**
+saves only the currently selected size. Ordinary widget clicks leave the clock in place and do not change selections.
+
+Existing city IDs and the `city-selections.json` format remain compatible. Invalid cities are ignored,
+duplicates are removed while preserving order, and an empty result falls back to the next source.
+Earlier versions had a **Use app selection** switch. It has been removed, so a widget that still has an old
+city saved in its own settings now shows that city; pick a city again in Edit Widget to change it.
 
 ## Develop and verify
 

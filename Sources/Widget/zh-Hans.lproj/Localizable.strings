@@ -1,7 +1,7 @@
 "World Clock" = "世界时钟";
 "Local time in the cities you care about." = "随时查看你关心的城市的当地时间。";
 "Choose Cities" = "选择城市";
-"Pick the cities to show. Leave empty for the default set." = "选择要显示的城市。留空则显示默认城市。";
+"Pick the cities to show. Leave empty to use the cities from the World Clock app." = "选择要显示的城市。留空则使用世界时钟应用中的城市。";
 "Cities" = "城市";
 "City" = "城市";
 "Search cities" = "搜索城市";
@@ -9,6 +9,3 @@
 "Popular cities" = "常用城市";
 "Search results" = "搜索结果";
 "No matching cities" = "没有匹配的城市";
-"Use app selection" = "使用应用中的城市选择";
-
-"Open World Clock to edit shared city lists. Turn off to choose cities here for this widget only." = "打开世界时钟应用可编辑公共城市列表。关闭此选项后，可在这里为此小组件单独选择城市。";

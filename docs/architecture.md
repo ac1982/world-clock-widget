@@ -23,8 +23,9 @@ flowchart LR
   their existing IDs. Other cities use `tz:` plus their IANA time-zone identifier.
 - `CitySearch` initializes a normalized index on the first nonempty search. Exact names rank before name
   prefixes, substrings and zone-name matches. The editor caches results until its query changes.
-- `WidgetSelection` defines precedence: app settings for this size when present and enabled, otherwise native
-  intent IDs, otherwise defaults. `CitySelection` enforces validity, uniqueness, order and capacity.
+- `WidgetSelection` defines precedence: valid IDs picked in the widget's own configuration, otherwise app settings
+  for this size, otherwise defaults. The extension reads the settings file only when nothing valid is picked.
+  `CitySelection` enforces validity, uniqueness, order and capacity.
 - `SelectionSettings` retains the previous JSON shape and unknown size keys. The repository re-reads before
   each atomic save, preserving other sizes. Only the single host app writes settings; the widget only reads.
   Atomic replacement prevents partial documents but is not a general concurrent multi-writer transaction.

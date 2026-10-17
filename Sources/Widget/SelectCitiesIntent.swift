@@ -5,10 +5,7 @@ import WidgetKit
 /// which is unavailable in the supported ad-hoc installation.
 struct SelectCitiesIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Choose Cities"
-    static let description = IntentDescription("Pick the cities to show. Leave empty for the default set.")
-
-    @Parameter(title: "Use app selection", description: "Open World Clock to edit shared city lists. Turn off to choose cities here for this widget only.", default: true)
-    var useAppSelection: Bool
+    static let description = IntentDescription("Pick the cities to show. Leave empty to use the cities from the World Clock app.")
 
     @Parameter(title: "Search cities", description: "Type a city name in English or Chinese, then open the city picker.")
     var search: String?
@@ -20,21 +17,15 @@ struct SelectCitiesIntent: WidgetConfigurationIntent {
     var locations: [String]?
 
     static var parameterSummary: some ParameterSummary {
-        When(\.$useAppSelection, .equalTo, true) {
-            Summary { \.$useAppSelection }
+        When(widgetFamily: .equalTo, .systemSmall) {
+            Summary {
+                \.$search
+                \.$location
+            }
         } otherwise: {
-            When(widgetFamily: .equalTo, .systemSmall) {
-                Summary {
-                    \.$useAppSelection
-                    \.$search
-                    \.$location
-                }
-            } otherwise: {
-                Summary {
-                    \.$useAppSelection
-                    \.$search
-                    \.$locations
-                }
+            Summary {
+                \.$search
+                \.$locations
             }
         }
     }
@@ -57,6 +48,6 @@ struct SelectCitiesIntent: WidgetConfigurationIntent {
     }
 
     func selection(for family: WidgetFamily) -> WidgetSelection {
-        WidgetSelection(source: useAppSelection ? .app : .widget, ids: pickedIDs(for: family))
+        WidgetSelection(ids: pickedIDs(for: family))
     }
 }

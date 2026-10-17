@@ -26,15 +26,17 @@ struct SelectionSettings: Codable, Equatable, Sendable {
     }
 }
 
-/// What one widget instance asked for: follow the app's shared list, or use its own IDs.
+/// The cities picked in one widget's own configuration (right-click → Edit Widget).
 struct WidgetSelection: Sendable {
-    var source: SelectionSource = .app
     var ids: [String] = []
 
-    /// Precedence: the app's saved list for this size (when following the app), then the widget's own IDs, then defaults.
+    /// Whether this widget falls back to the app's shared list, so the settings file is needed.
+    var usesAppSelection: Bool { CitySelection.validIDs(ids, limit: 1).isEmpty }
+
+    /// Precedence: cities picked in the widget, then the app's saved list for this size, then defaults.
     func cities(for size: WidgetSize, settings: SelectionSettings,
                 reference: TimeZone, at date: Date) -> [City] {
-        let selected = source == .app ? settings.selections[size.rawValue] ?? ids : ids
+        let selected = usesAppSelection ? settings.selections[size.rawValue] ?? [] : ids
         return CitySelection.resolve(selected, size: size, reference: reference, at: date)
     }
 }

@@ -11,7 +11,7 @@ struct EditorFooter: View {
             Image(systemName: model.saved ? "checkmark.circle.fill" : "rectangle.3.group")
                 .foregroundStyle(model.saved ? Color.green : Color.secondary)
             Text(model.saved ? (zh ? "已保存，小组件正在更新。" : "Saved. Your widgets are updating.") :
-                    (zh ? "应用到使用应用选择的同尺寸小组件。" : "Applies to this size’s widgets using app selection."))
+                    (zh ? "用于未在“编辑小组件”中选择城市的同尺寸小组件。" : "Used by this size’s widgets with no cities picked in Edit Widget."))
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
             Button(zh ? "默认城市" : "Defaults") { model.restoreDefaults() }
