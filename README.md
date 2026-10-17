@@ -12,7 +12,7 @@ Built with SwiftUI, WidgetKit and App Intents. No third-party runtime dependenci
 
 ## Features
 
-- **Small:** one city, large time, sky gradient, time difference and local day.
+- **Small:** one city on a day/night sky: name, time, and its day and time difference.
 - **Medium:** four cities in a 2×2 grid.
 - **Large:** seven cities with aligned times and slim 24-hour day ribbons.
 - Instant English/Chinese city search, recent selections, drag-to-reorder and live previews.

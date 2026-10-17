@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// One city on a live sky: phase icon and offset badge, then name, large time and local day.
+/// One city on a live sky: name and phase icon at the top, then the time and one caption line.
 struct SmallCard: View {
     let clock: CityClockState
     let snapshot: ClockSnapshot
@@ -9,32 +9,25 @@ struct SmallCard: View {
     @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
-        let text = ClockText(locale)
-        let weekday = ClockFormatting.weekdayString(snapshot.date, in: clock.zone, locale: locale, wide: true)
-
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                PhaseIcon(phase: clock.phase, size: 17, onSky: true)
-                    .padding(.leading, -2)
-                Spacer()
-                Text(text.offsetBadge(clock.offsetSeconds))
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.white.opacity(0.12), in: Capsule())
+            HStack(alignment: .center, spacing: 6) {
+                Text(clock.city.name(in: locale))
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer(minLength: 0)
+                PhaseIcon(phase: clock.phase, size: 13, onSky: true)
             }
             Spacer(minLength: 0)
-            Text(clock.city.name(in: locale))
-                .font(.system(size: 15, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            ClockTime(date: snapshot.date, zone: clock.zone, size: 46, weight: .light, live: snapshot.live)
+            ClockTime(date: snapshot.date, zone: clock.zone, size: 36, weight: .regular, live: snapshot.live)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, -2)
                 .widgetAccentable()
-            Text("\(text.relativeDay(clock.dayDelta)) · \(weekday)")
+            Text(ClockText(locale).caption(for: clock))
                 .font(.system(size: 11, weight: .medium))
-                .opacity(0.82)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .opacity(0.75)
+                .padding(.top, 2)
         }
         // White reads on the sky; tinted/monochrome modes have no sky, so use the system color.
         .foregroundStyle(renderingMode == .fullColor ? AnyShapeStyle(Color.white) : AnyShapeStyle(.primary))

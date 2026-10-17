@@ -26,11 +26,6 @@ struct ClockText {
         return minutes == 0 ? "\(sign)\(hours)h" : "\(sign)\(hours):\(String(format: "%02d", minutes))h"
     }
 
-    /// The small card's badge: "Local" when there is no offset, otherwise the offset.
-    func offsetBadge(_ seconds: Int) -> String {
-        seconds == 0 ? (isChinese ? "本地" : "Local") : offset(seconds)
-    }
-
     /// Row subtitle, e.g. "Today, +1h" / "明天，+13小时" / "Today, same time".
     func caption(dayDelta: Int, offsetSeconds: Int) -> String {
         let day = relativeDay(dayDelta)
