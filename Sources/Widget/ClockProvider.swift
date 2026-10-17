@@ -13,23 +13,21 @@ struct ClockProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: SelectCitiesIntent, in context: Context) async -> ClockEntry {
-        entry(for: configuration, family: context.family, at: .now)
+        entry(family: context.family, at: .now)
     }
 
     /// The cities are resolved once; later entries only move the date so captions, sky and ribbons update.
     func timeline(for configuration: SelectCitiesIntent, in context: Context) async -> Timeline<ClockEntry> {
-        let initial = entry(for: configuration, family: context.family, at: .now)
+        let initial = entry(family: context.family, at: .now)
         let entries = TimelineSchedule.dates(from: initial.date).map {
             ClockEntry(date: $0, cities: initial.cities)
         }
         return Timeline(entries: entries, policy: .atEnd)
     }
 
-    private func entry(for configuration: SelectCitiesIntent, family: WidgetFamily, at date: Date) -> ClockEntry {
-        let selection = configuration.selection(for: family)
-        // Only widgets without their own picked cities need the shared settings file.
-        let settings = selection.usesAppSelection ? readSharedSettings() : SelectionSettings()
-        let cities = selection.cities(for: WidgetSize(family), settings: settings, reference: .autoupdatingCurrent, at: date)
+    private func entry(family: WidgetFamily, at date: Date) -> ClockEntry {
+        let cities = CitySelection.cities(for: WidgetSize(family), settings: readSharedSettings(),
+                                          reference: .autoupdatingCurrent, at: date)
         return ClockEntry(date: date, cities: cities)
     }
 

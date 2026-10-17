@@ -15,22 +15,12 @@ struct SelectionSettings: Codable, Equatable, Sendable {
     }
 }
 
-/// The cities picked in one widget's own configuration (right-click → Edit Widget).
-struct WidgetSelection: Sendable {
-    var ids: [String] = []
-
-    /// Whether this widget falls back to the app's shared list, so the settings file is needed.
-    var usesAppSelection: Bool { CitySelection.validIDs(ids, limit: 1).isEmpty }
-
-    /// Precedence: cities picked in the widget, then the app's saved list for this size, then defaults.
-    func cities(for size: WidgetSize, settings: SelectionSettings,
-                reference: TimeZone, at date: Date) -> [City] {
-        let selected = usesAppSelection ? settings.selections[size.rawValue] ?? [] : ids
-        return CitySelection.resolve(selected, size: size, reference: reference, at: date)
-    }
-}
-
 enum CitySelection {
+    /// What a widget of `size` shows: the app's saved list for that size, or the defaults.
+    static func cities(for size: WidgetSize, settings: SelectionSettings, reference: TimeZone, at date: Date) -> [City] {
+        resolve(settings.selections[size.rawValue] ?? [], size: size, reference: reference, at: date)
+    }
+
     /// Keeps known IDs in order, drops duplicates and stops at `limit`.
     static func validIDs(_ ids: [String], limit: Int) -> [String] {
         guard limit > 0 else { return [] }

@@ -1,32 +1,12 @@
 import XCTest
-import WidgetKit
 
 final class SelectionFlowTests: XCTestCase {
     let reference = TimeZone(identifier: "Asia/Singapore")!
     let date = Date(timeIntervalSince1970: 1_792_237_320)
 
-    func testPickedCityWinsThenAppListThenDefaults() {
-        let appList = SelectionSettings(selections: ["small": ["paris"]])
-        func displayed(_ intent: SelectCitiesIntent, _ settings: SelectionSettings) -> [String] {
-            intent.selection(for: .systemSmall).cities(for: .small, settings: settings, reference: reference, at: date).map(\.id)
-        }
-        let picked = SelectCitiesIntent(location: "losangeles")
-        XCTAssertFalse(picked.selection(for: .systemSmall).usesAppSelection)
-        XCTAssertEqual(displayed(picked, appList), ["losangeles"])
-        XCTAssertEqual(displayed(picked, .init()), ["losangeles"])
-
-        let empty = SelectCitiesIntent()
-        XCTAssertTrue(empty.selection(for: .systemSmall).usesAppSelection)
-        XCTAssertEqual(displayed(empty, appList), ["paris"])
-        XCTAssertEqual(displayed(empty, .init()), ["tokyo"], "Defaults put another time zone first")
-
-        let removed = SelectCitiesIntent(location: "removed-city")
-        XCTAssertEqual(displayed(removed, appList), ["paris"], "An unknown picked ID counts as nothing picked")
-    }
-
     func testInvalidAndDuplicateIDsNeverReachRenderer() {
-        let selection = WidgetSelection(ids: ["bad", "london", "london", "tokyo", "paris", "sydney", "beijing"])
-        XCTAssertEqual(selection.cities(for: .medium, settings: .init(), reference: reference, at: date).map(\.id),
+        let settings = SelectionSettings(selections: ["medium": ["bad", "london", "london", "tokyo", "paris", "sydney", "beijing"]])
+        XCTAssertEqual(CitySelection.cities(for: .medium, settings: settings, reference: reference, at: date).map(\.id),
                        ["london", "tokyo", "paris", "sydney"])
         XCTAssertTrue(CitySelection.validIDs(["tokyo"], limit: 0).isEmpty)
     }

@@ -28,7 +28,7 @@ struct CitySelectionView: View {
                 Text(zh ? "从左侧选择一个城市" : "Choose a city on the left")
                     .font(.callout).foregroundStyle(.secondary).frame(maxWidth: .infinity)
             }
-            Text(zh ? "用于未在“编辑小组件”中选择城市的同尺寸小组件。" : "Used by this size’s widgets with no cities picked in Edit Widget.")
+            Text(zh ? "应用到所有此尺寸的世界时钟小组件。" : "Applies to every World Clock widget of this size.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             EditorFooter(model: model)

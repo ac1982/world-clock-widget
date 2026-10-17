@@ -8,8 +8,8 @@ validated without compiling the SwiftUI layouts; `scripts/check.sh` also type-ch
 
 ```mermaid
 flowchart LR
-    Intent[Widget configuration] --> Selection[WidgetSelection + CitySelection]
-    JSON[JSONSelectionRepository] --> Selection
+    Settings[Saved app selection per size] --> Selection[CitySelection]
+    JSON[JSONSelectionRepository] --> Settings
     Selection --> Timeline[ClockProvider / TimelineSchedule]
     Timeline --> Snapshot[ClockSnapshot / CityClockState]
     Snapshot --> Cards[Small / Medium / Large cards]
@@ -23,9 +23,8 @@ flowchart LR
   their existing IDs. Other cities use `tz:` plus their IANA time-zone identifier.
 - `CitySearch` initializes a normalized index on the first nonempty search. Exact names rank before name
   prefixes, substrings and zone-name matches. The editor caches results until its query changes.
-- `WidgetSelection` defines precedence: valid IDs picked in the widget's own configuration, otherwise app settings
-  for this size, otherwise defaults. The extension reads the settings file only when nothing valid is picked.
-  `CitySelection` enforces validity, uniqueness, order and capacity.
+- Cities are chosen only in the app. `CitySelection.cities(for:settings:…)` shows the saved list for a widget's size,
+  otherwise defaults, and enforces validity, uniqueness, order and capacity. Edit Widget has no city parameters.
 - `SelectionSettings` retains the previous JSON shape and unknown size keys. The repository re-reads before
   each atomic save, preserving other sizes. Only the single host app writes settings; the widget only reads.
   Atomic replacement prevents partial documents but is not a general concurrent multi-writer transaction.
@@ -37,7 +36,7 @@ flowchart LR
   check `NSApplication.launchIsDefaultUserInfoKey` before treating a launch as an explicit editor request;
   the absence of an already-received URL alone is insufficient.
   macOS can still briefly launch the host; this prevents Dock presentation, not all process activity on a click.
-  Explicitly opening the app still shows its editor. Right-click **Edit Widget** remains macOS's native configuration UI.
+  Explicitly opening the app still shows its editor.
 - `EditorRoute` carries size and ordered IDs for explicit editor links. Older links may also carry `source=app` or
   `source=widget`; the value is ignored, and any other value rejects the link.
 - `CityEditorModel` owns per-size drafts, capacity, ordering, save/error state and search results. Its repository
@@ -57,13 +56,13 @@ flowchart LR
 
 A missing JSON file is normal first use. Other I/O and decoding failures propagate to the editor. A failed save
 never reports success or triggers a widget reload, and corrupt JSON is not replaced with an empty configuration.
-The widget must still return a timeline on read failure, so its adapter logs the error and uses the native/default
-selection. The app provides the actionable error message when opened.
+The widget must still return a timeline on read failure, so its adapter logs the error and uses the default
+cities. The app provides the actionable error message when opened.
 
 Keep these persisted contracts stable unless implementing an explicit migration:
 
 - Bundle IDs and widget kind `com.ac1982.worldclock.cities`.
-- `SelectCitiesIntent` parameter names and string value types.
+- The `SelectCitiesIntent` configuration type (now parameterless) that placed widgets are tied to.
 - City IDs, size raw values and the settings file path/JSON keys.
 - The `worldclock://cities` URL scheme, host and `family`/`city` query keys.
 

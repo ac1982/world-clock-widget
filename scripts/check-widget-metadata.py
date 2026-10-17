@@ -20,13 +20,8 @@ data = json.loads(metadata.read_text())
 tap = data["actions"]["PassiveWidgetTapIntent"]
 assert tap["openAppWhenRun"] is False and tap["supportedModes"] == 1, "Widget taps must stay in the background"
 assert tap["isDiscoverable"] is False, "A display-only click handler should not appear in Shortcuts"
-parameters = {
-    parameter["name"]: parameter
-    for parameter in data["actions"]["SelectCitiesIntent"]["parameters"]
-}
-string_type = {"primitive": {"wrapper": {"typeIdentifier": 0}}}
-assert parameters["location"]["valueType"] == string_type, "City must persist as a string"
-assert parameters["locations"]["valueType"]["array"]["wrapper"]["memberValueType"] == string_type
-assert all(parameters[name]["dynamicOptionsSupport"] == 1 for name in ("location", "locations"))
+# Existing widgets are tied to this configuration type; cities are chosen only in the app.
+assert "SelectCitiesIntent" in data["actions"], "Placed widgets depend on the SelectCitiesIntent configuration type"
+assert not data["actions"]["SelectCitiesIntent"]["parameters"], "Cities are chosen in the app, not in Edit Widget"
 assert not data["entities"], "Ad-hoc widgets must not depend on team-scoped AppEntity resolution"
-print("Widget metadata: string city pickers verified")
+print("Widget metadata: app-only city selection verified")

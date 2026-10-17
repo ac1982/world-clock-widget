@@ -36,28 +36,23 @@ an Apple Developer account is not required for this configuration.
 
 Right-click the desktop → **Edit Widgets…** → search **World Clock**, then add a size.
 Ordinary clicks on a widget do not open the city selector or flash an app icon in the Dock.
-To choose a widget's city, right-click it, choose **Edit “World Clock”**, and pick a city.
-To set the cities for every widget you haven't customized, open World Clock from Applications,
-select cities, and choose **Apply to widgets**.
+To choose cities, open World Clock from Applications, pick a widget size and its cities,
+and choose **Apply to widgets**.
 The app quits when its last window closes. Widgets continue to work without it.
 
 ![City editor](docs/city-picker-light.png)
 
 ## How selections work
 
-A widget shows, in order of preference:
-
-1. the cities picked in its own **Edit “World Clock”** settings;
-2. otherwise the World Clock app's saved list for that widget size;
-3. otherwise the default cities.
+Cities are chosen in one place: the World Clock app. Every widget of a size shows the list saved for
+that size, or the default cities if none is saved. Edit Widget has no city settings.
 
 In the app, switching sizes preserves each size's unsaved draft until the app exits, and **Apply to widgets**
 saves only the currently selected size. Ordinary widget clicks leave the clock in place and do not change selections.
 
 Existing city IDs and the `city-selections.json` format remain compatible. Invalid cities are ignored,
-duplicates are removed while preserving order, and an empty result falls back to the next source.
-Earlier versions had a **Use app selection** switch. It has been removed, so a widget that still has an old
-city saved in its own settings now shows that city; pick a city again in Edit Widget to change it.
+duplicates are removed while preserving order, and an empty result falls back to the defaults.
+Earlier versions also let Edit Widget choose cities; those per-widget choices are now ignored.
 
 ## Develop and verify
 
@@ -120,12 +115,12 @@ Settings live at `~/Library/Application Support/WorldClockShared/city-selections
 The app has a narrow sandbox exception to write there; the extension has read-only access.
 Only a missing settings file means first use. Read/permission/decoding errors are surfaced in the editor,
 and saving refuses to overwrite an unreadable document. Widget rendering logs a read failure and falls
-back to its configured/default cities so a timeline can still be displayed.
+back to the default cities so a timeline can still be displayed.
 
-The native picker persists stable strings. Earlier experiments with AppEntity resolution failed for the
-ad-hoc-signed extension because its entity lookup required a signing team. Keep the parameter names, types,
-bundle IDs and widget kind stable; `check-widget-metadata.py` checks the relevant extracted schema.
-Very old AppEntity-based widget configurations need one manual city reselection when upgrading.
+Placed widgets are tied to the widget kind and its `SelectCitiesIntent` configuration type, which now has
+no parameters. Keep the type, bundle IDs and widget kind stable; `check-widget-metadata.py` checks the
+extracted schema. AppEntity-based configuration is avoided because its lookup needs a signing team,
+which ad-hoc builds do not have.
 
 For distribution, replace the local filesystem exceptions with a properly provisioned App Group and
 appropriate signing/notarization. This repository's installation script is for local builds, not an

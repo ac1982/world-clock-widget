@@ -1,114 +1,56 @@
-import AppIntents
-import WidgetKit
 import XCTest
 
-/// Configuration → displayed city, including zones outside the curated list.
+/// Saved app selection → displayed cities, including zones outside the curated list.
 final class ConfigurationTests: XCTestCase {
-    func testResizingWidgetPreservesSingleCity() {
-        let intent = SelectCitiesIntent(location: "losangeles")
-        for family in [WidgetFamily.systemSmall, .systemMedium, .systemLarge, .systemSmall] {
-            XCTAssertEqual(intent.selection(for: family).cities(for: WidgetSize(family), settings: .init(),
-                reference: sg, at: evening).map(\.id), ["losangeles"])
-        }
-    }
-
-    func testSmallUsesFirstValidListCityWhenSingleCityIsInvalid() {
-        let intent = SelectCitiesIntent(location: "removed-city", locations: ["bad", "london", "tokyo"])
-        XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
-    }
-
     let sg = TimeZone(identifier: "Asia/Singapore")!
     let evening = Date(timeIntervalSince1970: 1_792_237_320)
 
-    func testOptionsUseStableCatalogIDs() async throws {
-        let options = try await CityOptionsProvider().results()
-        XCTAssertEqual(Set(options.items), Set(CityCatalog.curated.map(\.id)))
-        XCTAssertEqual(options.items.count, CityCatalog.curated.count)
-        for id in options.items {
-            XCTAssertNotNil(CityCatalog.city(id: id))
-        }
-    }
-
-    func testPopularCitiesAreGroupedByRegionWithLocalRegionFirst() {
-        let english = Locale(identifier: "en_GB")
-        let options = CityOptionsProvider.options(matching: "", now: evening, reference: sg, locale: english)
-        XCTAssertEqual(options.sections.count, 6)
-        XCTAssertEqual(options.sections.first?.items.first?.value, "singapore", "Singapore users see Asia first")
-        let london = CityOptionsProvider.options(matching: "", now: evening, reference: TimeZone(identifier: "Europe/London")!,
-                                                 locale: english)
-        XCTAssertTrue(london.sections.first?.items.contains { $0.value == "london" } == true, "London users see Europe first")
-        XCTAssertEqual(CityRegion(timeZoneIdentifier: "Atlantic/Reykjavik"), .europe)
-        XCTAssertEqual(CityRegion(timeZoneIdentifier: "UTC"), .other)
-    }
-
-    func testPickerRowsShowLocalTimeAndDifference() throws {
-        let english = Locale(identifier: "en_GB")
-        let tokyo = try XCTUnwrap(CityCatalog.city(id: "tokyo"))
-        XCTAssertEqual(CityOptionsProvider.subtitle(tokyo, now: evening, reference: sg, locale: english), "20:42 · +1h")
-        let auckland = try XCTUnwrap(CityCatalog.city(id: "auckland"))
-        XCTAssertEqual(CityOptionsProvider.subtitle(auckland, now: evening, reference: sg, locale: english),
-                       "0:42 · Tomorrow, +5h")
-        let salta = try XCTUnwrap(CityCatalog.city(id: "tz:America/Argentina/Salta"))
-        XCTAssertEqual(CityOptionsProvider.subtitle(salta, now: evening, reference: sg, locale: english),
-                       "8:42 · \u{2212}11h · America/Argentina/Salta")
-    }
-
-    func testPickerSearchFindsCitiesWithoutScrollingTheWholeCatalog() {
-        XCTAssertEqual(CityOptionsProvider.options(matching: "Phoenix").items, ["tz:America/Phoenix"])
-        XCTAssertEqual(CityOptionsProvider.options(matching: "伦敦").items, ["london"])
-        XCTAssertEqual(CityOptionsProvider.options(matching: "  NEW Y  ").items, ["newyork"])
-        XCTAssertEqual(CityOptionsProvider.options(matching: "sao paulo").items, ["saopaulo"])
-        XCTAssertTrue(CityOptionsProvider.options(matching: "no-such-city").items.isEmpty)
-        XCTAssertEqual(CityOptionsProvider.options(matching: "Los Angeles").items.first, "losangeles")
-        XCTAssertEqual(CityOptionsProvider.options(matching: "上海").items.first, "shanghai")
-    }
-
-    func testSearchDoesNotReplaceTheSavedSelection() {
-        let intent = SelectCitiesIntent(location: "london", locations: ["london", "tokyo"])
-        intent.search = "Phoenix"
-        XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
-        XCTAssertEqual(intent.pickedIDs(for: .systemMedium), ["london", "tokyo"])
-    }
-
-    func testSmallShowsPickedCityNotDefault() {
-        let intent = SelectCitiesIntent(location: "tz:America/Phoenix")
-        let ids = intent.pickedIDs(for: .systemSmall)
-        let shown = CitySelection.resolve( ids, size: .small, reference: sg, at: evening)
-        XCTAssertEqual(shown.map(\.timeZoneIdentifier), ["America/Phoenix"])
-    }
-
-    func testSmallFallsBackToFirstListedCity() {
-        let intent = SelectCitiesIntent(locations: ["london", "tokyo"])
-        XCTAssertEqual(intent.pickedIDs(for: .systemSmall), ["london"])
+    func testWidgetShowsTheAppListForItsSizeOrDefaults() {
+        let settings = SelectionSettings(selections: ["small": ["singapore"], "medium": ["paris", "tz:America/Phoenix"]])
+        XCTAssertEqual(CitySelection.cities(for: .small, settings: settings, reference: sg, at: evening).map(\.id), ["singapore"])
+        XCTAssertEqual(CitySelection.cities(for: .medium, settings: settings, reference: sg, at: evening).map(\.id),
+                       ["paris", "tz:America/Phoenix"])
+        XCTAssertEqual(CitySelection.cities(for: .large, settings: settings, reference: sg, at: evening).map(\.id),
+                       Array(CityCatalog.defaults(relativeTo: sg, at: evening).prefix(7)).map(\.id), "No saved list uses defaults")
+        let removed = SelectionSettings(selections: ["small": ["removed-city"]])
+        XCTAssertEqual(CitySelection.cities(for: .small, settings: removed, reference: sg, at: evening).map(\.id), ["tokyo"],
+                       "Unknown cities fall back to defaults, with another time zone first")
     }
 
     func testMediumKeepsOrderAndCapacity() {
         let ids = ["tz:America/Phoenix", "london", "bogus", "tokyo", "paris", "sydney"]
-        let shown = CitySelection.resolve( ids, size: .medium, reference: sg, at: evening)
+        let shown = CitySelection.resolve(ids, size: .medium, reference: sg, at: evening)
         XCTAssertEqual(shown.map(\.id), ["tz:America/Phoenix", "london", "tokyo", "paris"])
     }
 
-    func testEmptyConfigurationUsesDefaultsWithOtherZoneFirst() {
-        let shown = CitySelection.resolve( SelectCitiesIntent().pickedIDs(for: .systemSmall),
-                                        size: .small, reference: sg, at: evening)
-        XCTAssertEqual(shown.map(\.id), ["tokyo"])
+    func testSearchRanksExactAndPrefixMatchesFirst() {
+        XCTAssertEqual(CitySearch.search("Phoenix").map(\.id), ["tz:America/Phoenix"])
+        XCTAssertEqual(CitySearch.search("伦敦").map(\.id), ["london"])
+        XCTAssertEqual(CitySearch.search("  NEW Y  ").map(\.id), ["newyork"])
+        XCTAssertEqual(CitySearch.search("sao paulo").map(\.id), ["saopaulo"])
+        XCTAssertTrue(CitySearch.search("no-such-city").isEmpty)
+        XCTAssertEqual(CitySearch.search("Los Angeles").first?.id, "losangeles")
+        XCTAssertEqual(CitySearch.search("上海").first?.id, "shanghai")
     }
 
-    func testSelectionChangesReplacePreviousCity() {
-        let intent = SelectCitiesIntent(location: "tokyo")
-        intent.location = "losangeles"
-        let shown = CitySelection.resolve( intent.pickedIDs(for: .systemSmall),
-                                        size: .small, reference: sg, at: evening)
-        XCTAssertEqual(shown.map(\.id), ["losangeles"])
+    func testPopularCitiesAreGroupedByRegionWithLocalRegionFirst() {
+        let groups = CityRegion.groups(CityCatalog.curated, localZone: sg)
+        XCTAssertEqual(groups.count, 6)
+        XCTAssertEqual(groups.first?.region, .asia)
+        XCTAssertEqual(groups.first?.cities.first?.id, "singapore")
+        XCTAssertEqual(groups.flatMap(\.cities).count, CityCatalog.curated.count)
+        let london = CityRegion.groups(CityCatalog.curated, localZone: TimeZone(identifier: "Europe/London")!)
+        XCTAssertEqual(london.first?.region, .europe)
+        XCTAssertEqual(CityRegion(timeZoneIdentifier: "Atlantic/Reykjavik"), .europe)
+        XCTAssertEqual(CityRegion(timeZoneIdentifier: "UTC"), .other)
     }
 
-    func testListSelectionKeepsOrderForBothSizes() {
-        let intent = SelectCitiesIntent(locations: ["paris", "tz:America/Phoenix"])
-        for family in [WidgetFamily.systemMedium, .systemLarge] {
-            XCTAssertEqual(intent.pickedIDs(for: family), ["paris", "tz:America/Phoenix"])
-        }
+    func testDifferenceNamesTheDayOnlyWhenItDiffers() {
+        let text = ClockText(Locale(identifier: "en_GB"))
+        XCTAssertEqual(text.difference(dayDelta: 0, offsetSeconds: 3600), "+1h")
+        XCTAssertEqual(text.difference(dayDelta: 0, offsetSeconds: 0), "same time")
+        XCTAssertEqual(text.difference(dayDelta: 1, offsetSeconds: 5 * 3600), "Tomorrow, +5h")
     }
-
 }
 
 final class TimelineTests: XCTestCase {
