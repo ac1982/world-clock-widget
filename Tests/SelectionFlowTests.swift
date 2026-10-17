@@ -69,8 +69,8 @@ final class SelectionFlowTests: XCTestCase {
         let state = CityClockState(city: try XCTUnwrap(CityCatalog.city(id: "losangeles")), date: date, reference: reference)
         XCTAssertEqual(state.zone.identifier, "America/Los_Angeles")
         XCTAssertEqual(state.phase, .night)
-        XCTAssertEqual(state.fraction, 0)
-        XCTAssertEqual(state.offset, -15 * 3600)
+        XCTAssertEqual(state.dayFraction, 0)
+        XCTAssertEqual(state.offsetSeconds, -15 * 3600)
         XCTAssertEqual(state.dayDelta, 0)
     }
 

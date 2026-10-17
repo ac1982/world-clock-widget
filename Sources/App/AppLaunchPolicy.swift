@@ -4,9 +4,17 @@ import Foundation
 /// Keep the decision separate from window/Dock effects so both sequences can be tested.
 struct AppLaunchPolicy {
     enum Action: Equatable {
-        case none, showEditor(URL?), keepEditorInactive, terminate
+        /// Do nothing.
+        case none
+        /// Show the editor, opening the route in the URL when there is one.
+        case showEditor(URL?)
+        /// A widget click while the editor exists: hide it but keep its drafts.
+        case keepEditorInactive
+        /// A widget click started the app: quit without showing anything.
+        case terminate
     }
 
+    /// Any URL means macOS launched the app for a link, so the default launch must not show the editor too.
     private var receivedURL = false
 
     func didFinish(isDefaultLaunch: Bool) -> Action {

@@ -5,8 +5,11 @@ struct CityClockState: Sendable {
     let city: City
     let zone: TimeZone
     let phase: DayPhase
-    let fraction: Double
-    let offset: Int
+    /// Fraction of the city's local day elapsed, 0 ..< 1. Drives the day ribbon.
+    let dayFraction: Double
+    /// Seconds the city is ahead of the reference zone (negative when behind).
+    let offsetSeconds: Int
+    /// The city's calendar date minus the reference zone's date: -1 yesterday, 0 today, 1 tomorrow.
     let dayDelta: Int
 
     init(city: City, date: Date, reference: TimeZone) {
@@ -14,8 +17,8 @@ struct CityClockState: Sendable {
         zone = city.timeZone
         let time = ClockMath.localHourMinute(in: zone, at: date)
         phase = DayPhase(hour: time.hour, minute: time.minute)
-        fraction = Double(time.hour * 60 + time.minute) / 1440
-        offset = ClockMath.offset(of: zone, from: reference, at: date)
+        dayFraction = ClockMath.dayFraction(hour: time.hour, minute: time.minute)
+        offsetSeconds = ClockMath.offset(of: zone, from: reference, at: date)
         dayDelta = ClockMath.dayDelta(of: zone, from: reference, at: date)
     }
 }

@@ -2,25 +2,36 @@ import Foundation
 
 /// The origin is also carried through widget links, so the editor never saves to the wrong target.
 enum SelectionSource: String, Sendable {
-    case app, widget
+    /// The shared, per-size list edited in the World Clock app.
+    case app
+    /// A list stored in one widget's own configuration (Edit Widget).
+    case widget
 }
 
 struct SelectionSettings: Codable, Equatable, Sendable {
+    /// How many recently picked cities are remembered for the editor's RECENT row.
+    static let recentLimit = 12
+
     // Preserve the original JSON shape and unknown size keys for forward compatibility.
     var selections: [String: [String]] = [:]
     var recentIDs: [String] = []
 
+    /// Cleaned-up recent city IDs, newest first.
+    var validRecentIDs: [String] { CitySelection.validIDs(recentIDs, limit: Self.recentLimit) }
+
     mutating func set(_ ids: [String], for size: WidgetSize) {
         let valid = CitySelection.validIDs(ids, limit: size.capacity)
         selections[size.rawValue] = valid
-        recentIDs = CitySelection.validIDs(valid + recentIDs, limit: 12)
+        recentIDs = CitySelection.validIDs(valid + recentIDs, limit: Self.recentLimit)
     }
 }
 
+/// What one widget instance asked for: follow the app's shared list, or use its own IDs.
 struct WidgetSelection: Sendable {
     var source: SelectionSource = .app
     var ids: [String] = []
 
+    /// Precedence: the app's saved list for this size (when following the app), then the widget's own IDs, then defaults.
     func cities(for size: WidgetSize, settings: SelectionSettings,
                 reference: TimeZone, at date: Date) -> [City] {
         let selected = source == .app ? settings.selections[size.rawValue] ?? ids : ids
@@ -29,6 +40,7 @@ struct WidgetSelection: Sendable {
 }
 
 enum CitySelection {
+    /// Keeps known IDs in order, drops duplicates and stops at `limit`.
     static func validIDs(_ ids: [String], limit: Int) -> [String] {
         guard limit > 0 else { return [] }
         var seen = Set<String>()
@@ -40,8 +52,14 @@ enum CitySelection {
         return result
     }
 
+    /// The cities a widget actually shows. Never empty: falls back to defaults.
     static func resolve(_ ids: [String], size: WidgetSize, reference: TimeZone, at date: Date) -> [City] {
         let cities = validIDs(ids, limit: size.capacity).compactMap(CityCatalog.city(id:))
-        return cities.isEmpty ? Array(CityCatalog.defaults(relativeTo: reference, at: date).prefix(size.capacity)) : cities
+        return cities.isEmpty ? defaults(size: size, reference: reference, at: date) : cities
+    }
+
+    /// Default cities for a widget size, with cities in other time zones first.
+    static func defaults(size: WidgetSize, reference: TimeZone, at date: Date) -> [City] {
+        Array(CityCatalog.defaults(relativeTo: reference, at: date).prefix(size.capacity))
     }
 }

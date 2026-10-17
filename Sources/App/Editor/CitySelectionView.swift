@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Right half of the editor: a live widget preview and the ordered list of chosen cities.
 struct CitySelectionView: View {
     let model: CityEditorModel
     let date: Date
@@ -13,15 +14,7 @@ struct CitySelectionView: View {
                 Spacer()
                 Text("\(model.selected.count) / \(model.size.capacity)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             }
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(LinearGradient(colors: [Color.blue.opacity(0.14), Color.indigo.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                WidgetPreviewCard(snapshot: ClockSnapshot(date: date, cities: model.cities, reference: model.reference), family: model.size)
-                    .scaleEffect(model.size == .large ? 0.57 : 0.86)
-                    .frame(width: 380, height: model.size == .large ? 224 : 168)
-                    .accessibilityHidden(true)
-            }
-            .frame(height: model.size == .large ? 244 : 190)
+            preview
 
             HStack {
                 EditorSectionTitle(zh ? "已选城市" : "YOUR CITIES")
@@ -31,26 +24,7 @@ struct CitySelectionView: View {
             ScrollView {
                 VStack(spacing: 5) {
                     ForEach(Array(model.cities.enumerated()), id: \.element.id) { index, city in
-                        HStack(spacing: 10) {
-                            Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
-                            Text(city.name(in: locale)).font(.callout.weight(.medium))
-                            Spacer()
-                            if index > 0 {
-                                Button { model.moveUp(city.id) } label: { Image(systemName: "chevron.up") }
-                                    .help(zh ? "上移" : "Move up")
-                            }
-                            Button { model.remove(city.id) } label: {
-                                Image(systemName: "minus.circle").foregroundStyle(.secondary)
-                            }.help(zh ? "移除城市" : "Remove city")
-                        }
-                        .disabled(!model.canEdit)
-                        .buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 9)
-                        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 9))
-                        .draggable(city.id)
-                        .dropDestination(for: String.self) { ids, _ in
-                            guard let id = ids.first else { return false }
-                            return model.move(id, to: city.id)
-                        }
+                        selectedRow(city, isFirst: index == 0)
                     }
                 }
             }.scrollIndicators(.hidden)
@@ -62,4 +36,40 @@ struct CitySelectionView: View {
         .padding(24)
     }
 
+    /// The real widget card, scaled down so even the large size fits beside the list.
+    private var preview: some View {
+        let isLarge = model.size == .large
+        return ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(LinearGradient(colors: [Color.blue.opacity(0.14), Color.indigo.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            WidgetPreviewCard(snapshot: ClockSnapshot(date: date, cities: model.cities, reference: model.reference), family: model.size)
+                .scaleEffect(isLarge ? 0.57 : 0.86)
+                .frame(width: 380, height: isLarge ? 224 : 168)
+                .accessibilityHidden(true)
+        }
+        .frame(height: isLarge ? 244 : 190)
+    }
+
+    private func selectedRow(_ city: City, isFirst: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
+            Text(city.name(in: locale)).font(.callout.weight(.medium))
+            Spacer()
+            if !isFirst {
+                Button { model.moveUp(city.id) } label: { Image(systemName: "chevron.up") }
+                    .help(zh ? "上移" : "Move up")
+            }
+            Button { model.remove(city.id) } label: {
+                Image(systemName: "minus.circle").foregroundStyle(.secondary)
+            }.help(zh ? "移除城市" : "Remove city")
+        }
+        .disabled(!model.canEdit)
+        .buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 9)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 9))
+        .draggable(city.id)
+        .dropDestination(for: String.self) { ids, _ in
+            guard let id = ids.first else { return false }
+            return model.move(id, to: city.id)
+        }
+    }
 }

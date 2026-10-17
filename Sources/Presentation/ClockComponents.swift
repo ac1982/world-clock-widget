@@ -27,16 +27,18 @@ struct ClockTime: View {
         .multilineTextAlignment(alignment)
     }
 
+    /// Static (non-live) time where only the AM/PM run is set smaller.
     private var attributed: AttributedString {
-        var s = date.formatted(ClockFormatting.timeStyle(zone: zone, locale: locale).attributedStyle)
-        s.font = .system(size: size, weight: weight, design: .rounded).monospacedDigit()
-        for (field, range) in s.runs[AttributeScopes.FoundationAttributes.DateFieldAttribute.self] where field == .amPM {
-            s[range].font = .system(size: max(10, size * 0.36), weight: .semibold, design: .rounded)
+        var text = date.formatted(ClockFormatting.timeStyle(zone: zone, locale: locale).attributedStyle)
+        text.font = .system(size: size, weight: weight, design: .rounded).monospacedDigit()
+        for (field, range) in text.runs[AttributeScopes.FoundationAttributes.DateFieldAttribute.self] where field == .amPM {
+            text[range].font = .system(size: max(10, size * 0.36), weight: .semibold, design: .rounded)
         }
-        return s
+        return text
     }
 }
 
+/// Sun or moon symbol for a day phase. `onSky` switches to white so it reads on the small card's sky.
 struct PhaseIcon: View {
     let phase: DayPhase
     var size: CGFloat = 14
@@ -76,7 +78,9 @@ struct DayRibbon: View {
 
     var body: some View {
         GeometryReader { geo in
-            let x = geo.size.width * fraction
+            // The "now" dot is slightly taller than the ribbon, centered on now but kept inside both ends.
+            let dot = geo.size.height + 4
+            let dotX = min(max(0, geo.size.width * fraction - dot / 2), geo.size.width - dot)
             ZStack(alignment: .leading) {
                 Capsule().fill(Sky.ribbon).opacity(scheme == .dark ? 0.85 : 0.9)
                     .overlay(Capsule().strokeBorder(scheme == .dark ? Color.white.opacity(0.16) : Color.black.opacity(0.06),
@@ -85,8 +89,8 @@ struct DayRibbon: View {
                     .fill(.white)
                     .overlay(Circle().strokeBorder(.black.opacity(0.18), lineWidth: 0.5))
                     .shadow(color: .black.opacity(0.25), radius: 1.5, y: 0.5)
-                    .frame(width: geo.size.height + 4, height: geo.size.height + 4)
-                    .offset(x: min(max(0, x - (geo.size.height + 4) / 2), geo.size.width - geo.size.height - 4))
+                    .frame(width: dot, height: dot)
+                    .offset(x: dotX)
                     .widgetAccentable()
             }
             .frame(maxHeight: .infinity)

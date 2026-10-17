@@ -13,12 +13,11 @@ struct CityOptionsProvider: DynamicOptionsProvider {
 
     static func options(matching query: String) -> IntentItemCollection<String> {
         let locale = Locale.current
-        let cities = CitySearch.search(query)
-        let items = cities.map { city in
+        let items = CitySearch.search(query).map { city in
             IntentItem(city.id, title: "\(city.name(in: locale))",
                        subtitle: "\(city.timeZoneIdentifier)")
         }
-        let title: LocalizedStringResource = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let title: LocalizedStringResource = CitySearch.isBlank(query)
             ? "Popular cities" : (items.isEmpty ? "No matching cities" : "Search results")
         return IntentItemCollection(sections: [IntentItemSection(title, items: items)])
     }

@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // Renders the widget views to PNG so the design can be reviewed without the desktop.
-// Usage: clock-snapshots <output-dir>
+// Usage: clock-snapshots <output-dir> [--picker] [--icon]
 
 let outDir = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? "docs", isDirectory: true)
 try? FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
@@ -43,7 +43,7 @@ func writePicker(scheme: ColorScheme, name: String) {
     app.setActivationPolicy(.prohibited)
     let view = NSHostingView(rootView: ContentView(model: previewModel(), previewDate: fixed)
         .environment(\.colorScheme, scheme).environment(\.locale, Locale(identifier: "en_US")))
-    let rect = NSRect(x: 0, y: 0, width: 940, height: 704)
+    let rect = NSRect(origin: .zero, size: ContentView.windowSize)
     let window = NSWindow(contentRect: rect, styleMask: [.borderless], backing: .buffered, defer: false)
     window.contentView = view
     view.frame = rect
@@ -92,9 +92,13 @@ func write<V: View>(_ view: V, scheme: ColorScheme, locale: Locale, name: String
     let renderer = ImageRenderer(content: view.environment(\.colorScheme, scheme).environment(\.locale, locale))
     renderer.scale = 2
     guard let cg = renderer.cgImage else { fatalError("render failed: \(name)") }
+    writePNG(cg, name: name)
+}
+
+func writePNG(_ image: CGImage, name: String) {
     let url = outDir.appendingPathComponent(name)
     let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
-    CGImageDestinationAddImage(dest, cg, nil)
+    CGImageDestinationAddImage(dest, image, nil)
     CGImageDestinationFinalize(dest)
     print(url.path)
 }
@@ -138,12 +142,8 @@ struct AppIconArt: View {
 
 if CommandLine.arguments.contains("--icon") {
     MainActor.assumeIsolated {
-        let r = ImageRenderer(content: AppIconArt())
-        r.scale = 1
-        let url = outDir.appendingPathComponent("icon-1024.png")
-        let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
-        CGImageDestinationAddImage(dest, r.cgImage!, nil)
-        CGImageDestinationFinalize(dest)
-        print(url.path)
+        let renderer = ImageRenderer(content: AppIconArt())
+        renderer.scale = 1
+        writePNG(renderer.cgImage!, name: "icon-1024.png")
     }
 }

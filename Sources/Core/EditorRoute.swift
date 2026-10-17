@@ -1,8 +1,16 @@
 import Foundation
 
+/// An explicit request to open the editor, encoded as `worldclock://cities?family=…&source=…&city=…`.
+/// The scheme, host and query keys are a persisted contract; keep them stable.
 struct EditorRoute: Equatable, Sendable {
     /// A widget click is not a request to edit. The host consumes this without creating a window.
     static let displayURL = URL(string: "worldclock://display")!
+
+    private static let scheme = "worldclock"
+    private static let host = "cities"
+    private enum Key {
+        static let family = "family", source = "source", city = "city"
+    }
 
     let size: WidgetSize
     let source: SelectionSource
@@ -15,23 +23,23 @@ struct EditorRoute: Equatable, Sendable {
     }
 
     init?(url: URL) {
-        guard url.scheme == "worldclock", url.host == "cities",
-              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-              let rawSize = items.first(where: { $0.name == "family" })?.value,
-              let size = WidgetSize(rawValue: rawSize) else { return nil }
+        guard url.scheme == Self.scheme, url.host == Self.host,
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems else { return nil }
+        func value(_ key: String) -> String? { items.first { $0.name == key }?.value }
+
+        guard let rawSize = value(Key.family), let size = WidgetSize(rawValue: rawSize) else { return nil }
         // Links from earlier releases have no source and refer to the app's shared selection.
-        let rawSource = items.first(where: { $0.name == "source" })?.value ?? "app"
-        guard let source = SelectionSource(rawValue: rawSource) else { return nil }
-        self.init(size: size, source: source, ids: items.filter { $0.name == "city" }.compactMap(\.value))
+        guard let source = SelectionSource(rawValue: value(Key.source) ?? SelectionSource.app.rawValue) else { return nil }
+        self.init(size: size, source: source, ids: items.filter { $0.name == Key.city }.compactMap(\.value))
     }
 
     var url: URL {
         var components = URLComponents()
-        components.scheme = "worldclock"
-        components.host = "cities"
-        components.queryItems = [URLQueryItem(name: "family", value: size.rawValue),
-                                 URLQueryItem(name: "source", value: source.rawValue)]
-            + ids.map { URLQueryItem(name: "city", value: $0) }
+        components.scheme = Self.scheme
+        components.host = Self.host
+        components.queryItems = [URLQueryItem(name: Key.family, value: size.rawValue),
+                                 URLQueryItem(name: Key.source, value: source.rawValue)]
+            + ids.map { URLQueryItem(name: Key.city, value: $0) }
         return components.url!
     }
 }

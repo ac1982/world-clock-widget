@@ -3,6 +3,9 @@ import SwiftUI
 
 /// Window composition only. Selection and persistence rules live in CityEditorModel.
 struct ContentView: View {
+    /// Fixed editor size, shared with the AppKit window and the snapshot tool.
+    static let windowSize = CGSize(width: 940, height: 704)
+
     @Bindable var model: CityEditorModel
     var previewDate: Date?
     @Environment(\.locale) private var locale
@@ -17,6 +20,7 @@ struct ContentView: View {
             if !model.canEdit { independentNotice }
             Group {
                 if let previewDate {
+                    // Snapshot rendering uses a fixed instant instead of a ticking clock.
                     editor(date: previewDate)
                 } else {
                     TimelineView(EditorRefreshSchedule(active: isAppActive)) { context in editor(date: context.date) }
@@ -26,20 +30,24 @@ struct ContentView: View {
             Divider()
             if model.canEdit { EditorFooter(model: model) }
         }
-        .frame(width: 940, height: 704)
+        .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(.background)
         .onAppear {
             isAppActive = NSApplication.shared.isActive
             model.loadIfNeeded()
         }
+        // Previews tick once a minute only while the app is active and not minimized.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in isAppActive = true }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in isAppActive = false }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didMiniaturizeNotification)) { _ in isAppActive = false }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didDeminiaturizeNotification)) { _ in isAppActive = NSApplication.shared.isActive }
-        .alert(zh ? "无法读取或保存城市" : "Couldn’t read or save cities", isPresented: Binding(
-            get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })) {
-                Button(zh ? "好" : "OK") { model.errorMessage = nil }
-            } message: { Text(model.errorMessage ?? "") }
+        .alert(zh ? "无法读取或保存城市" : "Couldn’t read or save cities", isPresented: isShowingError) {
+            Button(zh ? "好" : "OK") { model.errorMessage = nil }
+        } message: { Text(model.errorMessage ?? "") }
+    }
+
+    private var isShowingError: Binding<Bool> {
+        Binding(get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } })
     }
 
     private func editor(date: Date) -> some View {
@@ -95,5 +103,4 @@ struct ContentView: View {
         }
         .padding(.horizontal, 28).padding(.top, 30).padding(.bottom, 22)
     }
-
 }

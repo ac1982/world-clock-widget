@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Bottom bar: save status, Defaults and Apply. Hidden while viewing a widget's own cities.
 struct EditorFooter: View {
     let model: CityEditorModel
     @Environment(\.locale) private var locale
@@ -21,5 +22,4 @@ struct EditorFooter: View {
         }
         .padding(.horizontal, 26).padding(.vertical, 16)
     }
-
 }

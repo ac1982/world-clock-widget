@@ -54,7 +54,7 @@ final class ClockMathTests: XCTestCase {
         let after = CityClockState(city: kathmandu, date: entries[1], reference: .gmt)
         XCTAssertEqual(before.dayDelta, 0)
         XCTAssertEqual(after.dayDelta, 1)
-        XCTAssertEqual(after.fraction, 0)
+        XCTAssertEqual(after.dayFraction, 0)
         let kiritimati = try XCTUnwrap(TimeZone(identifier: "Pacific/Kiritimati"))
         XCTAssertEqual(ClockMath.dayDelta(of: kiritimati, from: .gmt, at: date("2028-02-29T14:00:00Z")), 1)
     }

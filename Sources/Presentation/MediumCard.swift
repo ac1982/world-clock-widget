@@ -6,13 +6,16 @@ struct MediumCard: View {
     let snapshot: ClockSnapshot
     @Environment(\.locale) private var locale
 
+    private static let columns = 2
+
     var body: some View {
         let cities = Array(snapshot.clocks.prefix(WidgetSize.medium.capacity))
+        let rows = WidgetSize.medium.capacity / Self.columns
         Grid(horizontalSpacing: 24, verticalSpacing: 10) {
-            ForEach(0..<2) { row in
+            ForEach(0..<rows, id: \.self) { row in
                 GridRow {
-                    ForEach(0..<2) { column in
-                        let index = row * 2 + column
+                    ForEach(0..<Self.columns, id: \.self) { column in
+                        let index = row * Self.columns + column
                         if index < cities.count {
                             tile(cities[index])
                         } else {
@@ -25,23 +28,18 @@ struct MediumCard: View {
     }
 
     private func tile(_ clock: CityClockState) -> some View {
-        let city = clock.city
-        let zone = clock.zone
-        let text = ClockText(locale)
-        let offset = clock.offset
-        let delta = clock.dayDelta
-        return VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 5) {
-                Text(city.name(in: locale))
+                Text(clock.city.name(in: locale))
                     .font(.system(size: 12, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 Spacer(minLength: 0)
                 PhaseIcon(phase: clock.phase, size: 11)
             }
-            ClockTime(date: snapshot.date, zone: zone, size: 28, weight: .regular, live: snapshot.live)
+            ClockTime(date: snapshot.date, zone: clock.zone, size: 28, weight: .regular, live: snapshot.live)
                 .widgetAccentable()
-            Text(text.caption(dayDelta: delta, offsetSeconds: offset))
+            Text(ClockText(locale).caption(for: clock))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

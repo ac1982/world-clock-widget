@@ -2,6 +2,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+/// Renders one timeline entry. The whole widget is a do-nothing button so clicks never launch the editor.
 struct WorldClockEntryView: View {
     let entry: ClockEntry
     @Environment(\.widgetFamily) private var family
@@ -9,20 +10,20 @@ struct WorldClockEntryView: View {
 
     var body: some View {
         let snapshot = ClockSnapshot(date: entry.date, cities: entry.cities, reference: .autoupdatingCurrent, live: true)
-        let card = WidgetSize(family)
+        let size = WidgetSize(family)
         Button(intent: PassiveWidgetTapIntent()) {
-            ClockCard(snapshot: snapshot, family: card)
+            ClockCard(snapshot: snapshot, family: size)
                 .padding(margins)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
-            .buttonStyle(.plain)
-            .accessibilityRemoveTraits(.isButton)
-            // Defensive fallback for system-handled clicks outside the content hit region.
-            .widgetURL(EditorRoute.displayURL)
-            .containerBackground(for: .widget) {
-                ClockCardBackground(snapshot: snapshot, family: card)
-            }
+        .buttonStyle(.plain)
+        .accessibilityRemoveTraits(.isButton)
+        // Defensive fallback for system-handled clicks outside the content hit region.
+        .widgetURL(EditorRoute.displayURL)
+        .containerBackground(for: .widget) {
+            ClockCardBackground(snapshot: snapshot, family: size)
+        }
     }
 }
 

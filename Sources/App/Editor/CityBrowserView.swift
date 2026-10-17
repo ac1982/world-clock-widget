@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Left half of the editor: search field, recent picks and the list of matching cities.
 struct CityBrowserView: View {
     @Bindable var model: CityEditorModel
     let date: Date
@@ -7,41 +8,13 @@ struct CityBrowserView: View {
     @FocusState private var searchFocused: Bool
     private var zh: Bool { locale.prefersChinese }
 
+    /// How many recent cities fit in the RECENT row.
+    private static let recentShown = 6
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(zh ? "搜索城市 · 中文或英文" : "Search cities in English or Chinese", text: $model.query)
-                    .textFieldStyle(.plain).focused($searchFocused)
-                    .onSubmit { model.submitSearch() }
-                    .accessibilityLabel(zh ? "搜索城市" : "Search cities")
-                if !model.query.isEmpty {
-                    Button { model.query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
-                        .buttonStyle(.plain).help(zh ? "清空搜索" : "Clear search")
-                }
-            }
-            .padding(13)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.blue.opacity(searchFocused ? 0.45 : 0), lineWidth: 1.5))
-
-            if !model.isSearching && !model.recent.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    EditorSectionTitle(zh ? "最近选择" : "RECENT")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(model.recent.prefix(6), id: \.self) { id in
-                                if let city = CityCatalog.city(id: id) {
-                                    Button { model.toggle(city) } label: {
-                                        Text(city.name(in: locale)).font(.caption.weight(.medium))
-                                            .padding(.horizontal, 11).padding(.vertical, 7)
-                                            .background(.blue.opacity(0.08), in: Capsule())
-                                    }.buttonStyle(.plain).disabled(!model.canEdit)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            searchField
+            if !model.isSearching && !model.recent.isEmpty { recentSection }
             HStack {
                 EditorSectionTitle(!model.isSearching ? (zh ? "常用城市" : "POPULAR CITIES") : (zh ? "搜索结果" : "RESULTS"))
                 Spacer()
@@ -50,7 +23,7 @@ struct CityBrowserView: View {
             ScrollView {
                 LazyVStack(spacing: 5) {
                     ForEach(model.matches) { city in
-                        cityRow(city, date: date)
+                        cityRow(city)
                     }
                     if model.matches.isEmpty {
                         ContentUnavailableView.search(text: model.query).padding(.top, 48)
@@ -63,9 +36,51 @@ struct CityBrowserView: View {
         .onAppear { searchFocused = true }
     }
 
-    private func cityRow(_ city: City, date: Date) -> some View {
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(zh ? "搜索城市 · 中文或英文" : "Search cities in English or Chinese", text: $model.query)
+                .textFieldStyle(.plain).focused($searchFocused)
+                .onSubmit { model.submitSearch() }
+                .accessibilityLabel(zh ? "搜索城市" : "Search cities")
+            if !model.query.isEmpty {
+                Button { model.query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                    .buttonStyle(.plain).help(zh ? "清空搜索" : "Clear search")
+            }
+        }
+        .padding(13)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.blue.opacity(searchFocused ? 0.45 : 0), lineWidth: 1.5))
+    }
+
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            EditorSectionTitle(zh ? "最近选择" : "RECENT")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(model.recent.prefix(Self.recentShown), id: \.self) { id in
+                        if let city = CityCatalog.city(id: id) { recentChip(city) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func recentChip(_ city: City) -> some View {
+        Button { model.toggle(city) } label: {
+            Text(city.name(in: locale)).font(.caption.weight(.medium))
+                .padding(.horizontal, 11).padding(.vertical, 7)
+                .background(.blue.opacity(0.08), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!model.canEdit)
+    }
+
+    private func cityRow(_ city: City) -> some View {
         let chosen = model.selected.contains(city.id)
         let phase = ClockMath.phase(in: city.timeZone, at: date)
+        let time = ClockFormatting.timeString(date, in: city.timeZone, locale: locale)
+        let offset = ClockMath.offset(of: city.timeZone, from: model.reference, at: date)
         return Button { model.toggle(city) } label: {
             HStack(spacing: 12) {
                 PhaseIcon(phase: phase, size: 17)
@@ -78,9 +93,9 @@ struct CityBrowserView: View {
                 }
                 Spacer(minLength: 4)
                 VStack(alignment: .trailing, spacing: 3) {
-                    Text(ClockFormatting.timeString(date, in: city.timeZone, locale: locale))
+                    Text(time)
                         .font(.system(size: 15, weight: .medium, design: .rounded).monospacedDigit())
-                    Text(ClockText(locale).offset(ClockMath.offset(of: city.timeZone, from: model.reference, at: date)))
+                    Text(ClockText(locale).offset(offset))
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 Image(systemName: chosen ? "checkmark.circle.fill" : "plus.circle")
@@ -91,9 +106,8 @@ struct CityBrowserView: View {
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .disabled(!model.canEdit || (!chosen && model.size != .small && model.selected.count >= model.size.capacity))
-        .accessibilityLabel("\(city.name(in: locale)), \(ClockFormatting.timeString(date, in: city.timeZone, locale: locale))")
+        .disabled(!model.canToggle(city))
+        .accessibilityLabel("\(city.name(in: locale)), \(time)")
         .accessibilityAddTraits(chosen ? .isSelected : [])
     }
-
 }
