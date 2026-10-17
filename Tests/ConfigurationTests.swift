@@ -22,10 +22,35 @@ final class ConfigurationTests: XCTestCase {
 
     func testOptionsUseStableCatalogIDs() async throws {
         let options = try await CityOptionsProvider().results()
-        XCTAssertEqual(options.items, CityCatalog.curated.map(\.id))
+        XCTAssertEqual(Set(options.items), Set(CityCatalog.curated.map(\.id)))
+        XCTAssertEqual(options.items.count, CityCatalog.curated.count)
         for id in options.items {
             XCTAssertNotNil(CityCatalog.city(id: id))
         }
+    }
+
+    func testPopularCitiesAreGroupedByRegionWithLocalRegionFirst() {
+        let english = Locale(identifier: "en_GB")
+        let options = CityOptionsProvider.options(matching: "", now: evening, reference: sg, locale: english)
+        XCTAssertEqual(options.sections.count, 6)
+        XCTAssertEqual(options.sections.first?.items.first?.value, "singapore", "Singapore users see Asia first")
+        let london = CityOptionsProvider.options(matching: "", now: evening, reference: TimeZone(identifier: "Europe/London")!,
+                                                 locale: english)
+        XCTAssertTrue(london.sections.first?.items.contains { $0.value == "london" } == true, "London users see Europe first")
+        XCTAssertEqual(CityRegion(timeZoneIdentifier: "Atlantic/Reykjavik"), .europe)
+        XCTAssertEqual(CityRegion(timeZoneIdentifier: "UTC"), .other)
+    }
+
+    func testPickerRowsShowLocalTimeAndDifference() throws {
+        let english = Locale(identifier: "en_GB")
+        let tokyo = try XCTUnwrap(CityCatalog.city(id: "tokyo"))
+        XCTAssertEqual(CityOptionsProvider.subtitle(tokyo, now: evening, reference: sg, locale: english), "20:42 · +1h")
+        let auckland = try XCTUnwrap(CityCatalog.city(id: "auckland"))
+        XCTAssertEqual(CityOptionsProvider.subtitle(auckland, now: evening, reference: sg, locale: english),
+                       "0:42 · Tomorrow, +5h")
+        let salta = try XCTUnwrap(CityCatalog.city(id: "tz:America/Argentina/Salta"))
+        XCTAssertEqual(CityOptionsProvider.subtitle(salta, now: evening, reference: sg, locale: english),
+                       "8:42 · \u{2212}11h · America/Argentina/Salta")
     }
 
     func testPickerSearchFindsCitiesWithoutScrollingTheWholeCatalog() {

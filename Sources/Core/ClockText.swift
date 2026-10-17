@@ -37,5 +37,22 @@ struct ClockText {
         caption(dayDelta: clock.dayDelta, offsetSeconds: clock.offsetSeconds)
     }
 
+    /// Like `caption`, but only names the day when it differs: "+1h", "same time", "Tomorrow, +13h".
+    func difference(dayDelta: Int, offsetSeconds: Int) -> String {
+        guard dayDelta == 0 else { return caption(dayDelta: dayDelta, offsetSeconds: offsetSeconds) }
+        return offsetSeconds == 0 ? (isChinese ? "同一时间" : "same time") : offset(offsetSeconds)
+    }
+
+    func regionName(_ region: CityRegion) -> String {
+        switch region {
+        case .asia: isChinese ? "亚洲" : "Asia"
+        case .europe: isChinese ? "欧洲" : "Europe"
+        case .africa: isChinese ? "非洲" : "Africa"
+        case .americas: isChinese ? "美洲" : "Americas"
+        case .oceania: isChinese ? "大洋洲" : "Oceania"
+        case .other: isChinese ? "其他" : "Other"
+        }
+    }
+
     var title: String { isChinese ? "世界时钟" : "World Clock" }
 }
