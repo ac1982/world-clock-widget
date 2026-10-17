@@ -13,26 +13,26 @@ final class SelectionFlowTests: XCTestCase {
 
     func testRoutesRoundTripSizesAndRawZoneIDs() throws {
         for size in WidgetSize.allCases {
-            let route = EditorRoute(size: size, ids: ["tz:America/Argentina/Salta", "london"])
-            XCTAssertEqual(EditorRoute(url: route.url), route)
+            let route = AppLink(size: size, ids: ["tz:America/Argentina/Salta", "london"])
+            XCTAssertEqual(AppLink(url: route.url), route)
         }
     }
 
     func testDisplayClickCannotBeParsedAsAnEditorRequest() {
-        XCTAssertEqual(EditorRoute.displayURL.absoluteString, "worldclock://display")
-        XCTAssertNil(EditorRoute(url: EditorRoute.displayURL))
-        XCTAssertNil(EditorRoute(url: URL(string: "worldclock://display?family=small&city=london")!))
+        XCTAssertEqual(AppLink.displayURL.absoluteString, "worldclock://display")
+        XCTAssertNil(AppLink(url: AppLink.displayURL))
+        XCTAssertNil(AppLink(url: URL(string: "worldclock://display?family=small&city=london")!))
     }
 
     func testLegacyRoutesAndUntrustedLinks() throws {
-        let legacy = try XCTUnwrap(EditorRoute(url: URL(string: "worldclock://cities?family=medium&city=london&city=bogus&city=london&city=tokyo")!))
+        let legacy = try XCTUnwrap(AppLink(url: URL(string: "worldclock://cities?family=medium&city=london&city=bogus&city=london&city=tokyo")!))
         for source in ["app", "widget"] {
             let link = try XCTUnwrap(URL(string: "worldclock://cities?family=small&source=\(source)&city=tokyo"))
-            XCTAssertEqual(EditorRoute(url: link), EditorRoute(size: .small, ids: ["tokyo"]), "Older links still open the editor")
+            XCTAssertEqual(AppLink(url: link), AppLink(size: .small, ids: ["tokyo"]), "Older links still open the editor")
         }
         XCTAssertEqual(legacy.ids, ["london", "tokyo"])
         for string in ["https://example.com/cities?family=small", "worldclock://cities?family=wrong", "worldclock://cities?family=small&source=wrong"] {
-            XCTAssertNil(EditorRoute(url: URL(string: string)!))
+            XCTAssertNil(AppLink(url: URL(string: string)!))
         }
     }
 

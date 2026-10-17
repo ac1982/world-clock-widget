@@ -4,7 +4,7 @@ import XCTest
 final class AppLifecycleTests: XCTestCase {
     func testPassiveURLBeforeLaunchDoesNotOpenWindow() {
         var launch = AppLaunchPolicy()
-        XCTAssertEqual(launch.open([EditorRoute.displayURL], hasWindow: false), .terminate)
+        XCTAssertEqual(launch.open([AppLink.displayURL], hasWindow: false), .terminate)
         XCTAssertEqual(launch.didFinish(isDefaultLaunch: true), .none)
     }
 
@@ -12,20 +12,20 @@ final class AppLifecycleTests: XCTestCase {
         var launch = AppLaunchPolicy()
         XCTAssertEqual(launch.didFinish(isDefaultLaunch: false), .none)
         for _ in 0..<2 {
-            XCTAssertEqual(launch.open([EditorRoute.displayURL], hasWindow: false), .terminate)
+            XCTAssertEqual(launch.open([AppLink.displayURL], hasWindow: false), .terminate)
         }
     }
 
     func testPassiveClickDoesNotCloseAnExistingWindow() {
         var launch = AppLaunchPolicy()
-        XCTAssertEqual(launch.open([EditorRoute.displayURL], hasWindow: true), .keepWindowInactive)
+        XCTAssertEqual(launch.open([AppLink.displayURL], hasWindow: true), .keepWindowInactive)
     }
 
     func testExplicitLaunchAndOldCityLinksOpenTheWindow() {
         var launch = AppLaunchPolicy()
         XCTAssertEqual(launch.didFinish(isDefaultLaunch: true), .showWindow)
-        let url = EditorRoute(size: .large, ids: ["london"]).url
-        XCTAssertEqual(launch.open([EditorRoute.displayURL, url], hasWindow: false), .showWindow)
+        let url = AppLink(size: .large, ids: ["london"]).url
+        XCTAssertEqual(launch.open([AppLink.displayURL, url], hasWindow: false), .showWindow)
     }
 
     func testUnknownURLDoesNotCreateAWindow() {

@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension WidgetSize {
-    /// Nominal macOS sizes for the editor and deterministic snapshot tool.
+    /// Nominal macOS sizes for the app window preview and the deterministic snapshot tool.
     var previewSize: CGSize {
         switch self {
         case .small: CGSize(width: 170, height: 170)

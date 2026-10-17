@@ -20,7 +20,7 @@ struct WorldClockEntryView: View {
         .buttonStyle(.plain)
         .accessibilityRemoveTraits(.isButton)
         // Defensive fallback for system-handled clicks outside the content hit region.
-        .widgetURL(EditorRoute.displayURL)
+        .widgetURL(AppLink.displayURL)
         .containerBackground(for: .widget) {
             ClockCardBackground(snapshot: snapshot, family: size)
         }

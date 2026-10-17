@@ -1,4 +1,4 @@
-/// Stable raw values are also the keys in the existing settings document.
+/// Widget sizes. The raw values appear in `worldclock://cities` links; keep them stable.
 enum WidgetSize: String, CaseIterable, Sendable {
     case small, medium, large
 

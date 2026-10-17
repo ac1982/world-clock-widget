@@ -1,6 +1,6 @@
 import Foundation
 
-/// Broad parts of the world, used to group the popular cities in both city pickers.
+/// Broad parts of the world, used to group the popular cities in the Edit Widget city picker.
 enum CityRegion: CaseIterable, Sendable {
     case asia, europe, africa, americas, oceania, other
 

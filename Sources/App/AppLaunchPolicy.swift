@@ -24,7 +24,7 @@ struct AppLaunchPolicy {
     /// `worldclock://cities` links from earlier versions still open the window; widget clicks never do.
     mutating func open(_ urls: [URL], hasWindow: Bool) -> Action {
         receivedURL = true
-        if urls.contains(where: { EditorRoute(url: $0) != nil }) { return .showWindow }
+        if urls.contains(where: { AppLink(url: $0) != nil }) { return .showWindow }
         return hasWindow ? .keepWindowInactive : .terminate
     }
 }

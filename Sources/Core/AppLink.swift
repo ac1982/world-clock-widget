@@ -2,8 +2,8 @@ import Foundation
 
 /// A `worldclock://cities?family=…&city=…` link. Earlier versions used it to open the city editor;
 /// it now opens the app window. The scheme, host and query keys are a persisted contract; keep them stable.
-struct EditorRoute: Equatable, Sendable {
-    /// A widget click is not a request to edit. The host consumes this without creating a window.
+struct AppLink: Equatable, Sendable {
+    /// The link every widget click sends. The host consumes it without creating a window.
     static let displayURL = URL(string: "worldclock://display")!
 
     private static let scheme = "worldclock"

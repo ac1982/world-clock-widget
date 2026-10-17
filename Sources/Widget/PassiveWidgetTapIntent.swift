@@ -1,6 +1,6 @@
 import AppIntents
 
-/// Consume accidental taps inside the extension, including when the editor is already running.
+/// Consume widget clicks inside the extension, so they never launch or reveal the app.
 struct PassiveWidgetTapIntent: AppIntent {
     static let title: LocalizedStringResource = "Keep clock visible"
     static let supportedModes: IntentModes = .background

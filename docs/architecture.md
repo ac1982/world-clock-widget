@@ -35,7 +35,7 @@ flowchart LR
   check `NSApplication.launchIsDefaultUserInfoKey` before treating a launch as an explicit request;
   the absence of an already-received URL alone is insufficient.
   macOS can still briefly launch the host; this prevents Dock presentation, not all process activity on a click.
-- `EditorRoute` recognizes `worldclock://cities` links from earlier versions; they now just open the app window.
+- `AppLink` recognizes `worldclock://cities` links from earlier versions; they now just open the app window.
   Older links may carry `source=app` or `source=widget`; the value is ignored, and any other value rejects the link.
 - `CityClockState` computes a city's date difference, offset and day phase once per snapshot. All layouts consume
   that state. `ClockFormatting` respects locale and 12/24-hour preference without reading the host's default zone.
