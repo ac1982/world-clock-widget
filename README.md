@@ -119,3 +119,15 @@ and types, bundle IDs and widget kind stable; `check-widget-metadata.py` checks 
 
 For distribution, use appropriate signing and notarization. This repository's installation script is for local builds, not an
 App Store distribution workflow.
+
+With Pulse's Developer ID Application certificate and private key in the local keychain, run
+`./scripts/sign-pulse.sh` to build and sign both the Release app and its widget with team `89G3DBC6CS`.
+The signed app is at `build/Pulse.noindex/Build/Products/Release/WorldClock.app`; the ZIP is at
+`build/distribution/WorldClock-Pulse.zip`. This script does not notarize the app or replace the installed copy.
+Notarization is a separate step before public distribution.
+
+Tag pushes matching `v*` run `.github/workflows/release.yml` on GitHub's Xcode 27 runner:
+core checks and XCTest, Pulse signing, then a GitHub Release containing the ZIP and SHA-256 checksum.
+The workflow requires repository secrets `PULSE_CERTIFICATE_P12` (base64-encoded PKCS#12)
+and `PULSE_CERTIFICATE_PASSWORD`. Signing material is imported into a temporary runner keychain
+and deleted after the job. Releases are signed but not notarized.

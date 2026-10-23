@@ -1,0 +1,66 @@
+name: Signed Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install XcodeGen
+        run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+      - name: Test
+        run: |
+          xcodegen generate -q
+          xcrun swiftc -swift-version 6 -typecheck Sources/Core/*.swift
+          xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -derivedDataPath build/DerivedData.noindex -destination 'platform=macOS,arch=arm64' test -quiet
+      - name: Import Pulse signing identity
+        env:
+          CERTIFICATE: ${{ secrets.PULSE_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.PULSE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/pulse.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 32)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          printf '%s' "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/pulse.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/pulse.p12" -P "$CERTIFICATE_PASSWORD" -k "$KEYCHAIN" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          rm "$RUNNER_TEMP/pulse.p12"
+      - name: Build and sign
+        run: ./scripts/sign-pulse.sh
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd build/distribution
+          shasum -a 256 WorldClock-Pulse.zip > SHA256SUMS.txt
+          cat > release-notes.md <<'NOTES'
+          Native World Clock Widget for Apple Silicon Macs running macOS 27 or later.
+
+          Built and tested by GitHub Actions using Xcode 27.1. The app and widget are signed with Pulse's Developer ID Application certificate (team 89G3DBC6CS), with hardened runtime and secure timestamps.
+
+          This release is signed but not notarized. macOS Gatekeeper may require explicit approval on first launch.
+
+          Download WorldClock-Pulse.zip, extract it, and place World Clock Widget.app in ~/Applications. Then open it once to register the widget.
+          NOTES
+          gh release create "$RELEASE_TAG" WorldClock-Pulse.zip SHA256SUMS.txt --verify-tag --title "World Clock Widget $RELEASE_TAG" --notes-file release-notes.md
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/pulse.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/pulse.p12"
