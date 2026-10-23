@@ -39,6 +39,8 @@ processes. The dedicated keychain is outside the normal search list and stores t
 
 Tag pushes run `.github/workflows/release.yml`. Never publish on missing credentials,
 failed signatures, pending/rejected notarization, failed stapling, or failed Gatekeeper checks.
+Disable `CODE_SIGN_INJECT_BASE_ENTITLEMENTS` for Developer ID builds and reject
+`com.apple.security.get-task-allow` in both signed bundles before submission.
 Require Apple status `Accepted`; uploading alone is insufficient. Staple the `.app`,
 validate its ticket, verify nested signatures, assess Gatekeeper, then ZIP and hash it.
 The ZIP carries the app with its ticket; no installer certificate is needed.

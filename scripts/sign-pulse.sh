@@ -11,12 +11,17 @@ xcodegen generate -q
 xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Release \
   -derivedDataPath build/Pulse.noindex -destination 'platform=macOS,arch=arm64' \
   DEVELOPMENT_TEAM=89G3DBC6CS CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" \
-  OTHER_CODE_SIGN_FLAGS="--timestamp" build -quiet
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO OTHER_CODE_SIGN_FLAGS="--timestamp" build -quiet
 python3 scripts/check-widget-metadata.py "$PRODUCT"
 codesign --verify --deep --strict --verbose=2 "$PRODUCT"
 python3 - "$PRODUCT" "${GITHUB_REF_NAME:-}" <<'PYTHON'
-import pathlib, plistlib, sys
+import pathlib, plistlib, subprocess, sys
 app = pathlib.Path(sys.argv[1])
+for bundle in (app, app / 'Contents/PlugIns/WorldClockWidget.appex'):
+    result = subprocess.run(['codesign', '-d', '--entitlements', ':-', str(bundle)], capture_output=True, check=True)
+    entitlements = plistlib.loads(result.stdout)
+    if entitlements.get('com.apple.security.get-task-allow'):
+        raise SystemExit(f'Debugger entitlement is forbidden in releases: {bundle.name}')
 main = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
 widget = plistlib.loads((app / 'Contents/PlugIns/WorldClockWidget.appex/Contents/Info.plist').read_bytes())
 for key in ('CFBundleShortVersionString', 'CFBundleVersion'):

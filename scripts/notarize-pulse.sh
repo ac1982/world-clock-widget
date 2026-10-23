@@ -26,13 +26,18 @@ if ! xcrun notarytool submit "$ARCHIVE" "${AUTH[@]}" --wait --timeout 20m --outp
   print -u2 "Notarization did not finish successfully; do not publish."
   exit 1
 fi
-python3 - "$RESULT" <<'PY'
+if ! python3 - "$RESULT" <<'PY'
 import json, sys
 result = json.load(open(sys.argv[1]))
 print('Notarization:', result.get('status'), 'Submission:', result.get('id'))
 if result.get('status') != 'Accepted':
     raise SystemExit('Apple did not accept this submission; do not publish it.')
 PY
+then
+  SUBMISSION_ID=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$RESULT")
+  xcrun notarytool log "$SUBMISSION_ID" "${AUTH[@]}" || true
+  exit 1
+fi
 STAGE=$(mktemp -d build/distribution/.notarize.XXXXXX)
 trap 'rm -rf "$STAGE"' EXIT
 ditto -x -k "$ARCHIVE" "$STAGE"
