@@ -14,6 +14,18 @@ xcodebuild -project WorldClock.xcodeproj -scheme WorldClock -configuration Relea
   OTHER_CODE_SIGN_FLAGS="--timestamp" build -quiet
 python3 scripts/check-widget-metadata.py "$PRODUCT"
 codesign --verify --deep --strict --verbose=2 "$PRODUCT"
+python3 - "$PRODUCT" "${GITHUB_REF_NAME:-}" <<'PYTHON'
+import pathlib, plistlib, sys
+app = pathlib.Path(sys.argv[1])
+main = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+widget = plistlib.loads((app / 'Contents/PlugIns/WorldClockWidget.appex/Contents/Info.plist').read_bytes())
+for key in ('CFBundleShortVersionString', 'CFBundleVersion'):
+    if main[key] != widget[key]:
+        raise SystemExit(f'App and widget {key} differ')
+if sys.argv[2].startswith('v') and sys.argv[2][1:] != main['CFBundleShortVersionString']:
+    raise SystemExit('Release tag does not match the built app version')
+print('Release version:', main['CFBundleShortVersionString'], 'build:', main['CFBundleVersion'])
+PYTHON
 
 mkdir -p "$OUTPUT"
 STAGE=$(mktemp -d "$OUTPUT/.pulse.XXXXXX")

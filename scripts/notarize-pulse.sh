@@ -7,6 +7,9 @@ RESULT=build/distribution/notarization.json
 AUTH=()
 if [[ -n "${NOTARY_KEYCHAIN_PROFILE:-}" ]]; then
   AUTH=(--keychain-profile "$NOTARY_KEYCHAIN_PROFILE")
+  if [[ -n "${NOTARY_KEYCHAIN_PATH:-}" ]]; then
+    AUTH+=(--keychain "$NOTARY_KEYCHAIN_PATH")
+  fi
 elif [[ -n "${APP_STORE_CONNECT_KEY_PATH:-}" ]]; then
   : "${APP_STORE_CONNECT_KEY_ID:?Missing App Store Connect key ID}"
   AUTH=(--key "$APP_STORE_CONNECT_KEY_PATH" --key-id "$APP_STORE_CONNECT_KEY_ID")
@@ -18,7 +21,11 @@ else
   : "${APPLE_APP_SPECIFIC_PASSWORD:?Missing Apple app-specific password}"
   AUTH=(--apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id 89G3DBC6CS)
 fi
-xcrun notarytool submit "$ARCHIVE" "${AUTH[@]}" --wait --timeout 20m --output-format json > "$RESULT"
+if ! xcrun notarytool submit "$ARCHIVE" "${AUTH[@]}" --wait --timeout 20m --output-format json > "$RESULT"; then
+  cat "$RESULT"
+  print -u2 "Notarization did not finish successfully; do not publish."
+  exit 1
+fi
 python3 - "$RESULT" <<'PY'
 import json, sys
 result = json.load(open(sys.argv[1]))

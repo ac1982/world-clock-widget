@@ -14,14 +14,15 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Check notarization credentials
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
-          test -n "$APPLE_ID" && test -n "$APPLE_APP_SPECIFIC_PASSWORD" || {
-            echo 'Configure APPLE_ID and APPLE_APP_SPECIFIC_PASSWORD repository secrets before publishing.'
+          test -n "$APPLE_API_KEY_P8" && test -n "$APPLE_API_KEY_ID" && test -n "$APPLE_API_ISSUER_ID" || {
+            echo 'Configure APPLE_API_KEY_P8, APPLE_API_KEY_ID and APPLE_API_ISSUER_ID repository secrets before publishing.'
             exit 1
           }
       - name: Install XcodeGen
@@ -37,6 +38,8 @@ jobs:
           CERTIFICATE_PASSWORD: ${{ secrets.PULSE_CERTIFICATE_PASSWORD }}
         run: |
           set -euo pipefail
+          umask 077
+          security list-keychains -d user > "$RUNNER_TEMP/pulse-search-list.txt"
           KEYCHAIN="$RUNNER_TEMP/pulse.keychain-db"
           KEYCHAIN_PASSWORD=$(openssl rand -hex 32)
           echo "::add-mask::$KEYCHAIN_PASSWORD"
@@ -46,15 +49,29 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security import "$RUNNER_TEMP/pulse.p12" -P "$CERTIFICATE_PASSWORD" -k "$KEYCHAIN" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
-          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          python3 - "$RUNNER_TEMP/pulse-search-list.txt" "$KEYCHAIN" <<'PYTHON'
+          import pathlib, shlex, subprocess, sys
+          original = shlex.split(pathlib.Path(sys.argv[1]).read_text())
+          subprocess.run(['security', 'list-keychains', '-d', 'user', '-s', sys.argv[2], *original], check=True)
+          PYTHON
           rm "$RUNNER_TEMP/pulse.p12"
       - name: Build and sign
         run: ./scripts/sign-pulse.sh
       - name: Notarize and staple
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-        run: ./scripts/notarize-pulse.sh
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          export APP_STORE_CONNECT_KEY_PATH="$RUNNER_TEMP/pulse-notary.p8"
+          export APP_STORE_CONNECT_KEY_ID="$APPLE_API_KEY_ID"
+          export APP_STORE_CONNECT_ISSUER_ID="$APPLE_API_ISSUER_ID"
+          trap 'rm -f "$APP_STORE_CONNECT_KEY_PATH"' EXIT
+          printf '%s' "$APPLE_API_KEY_P8" > "$APP_STORE_CONNECT_KEY_PATH"
+          unset APPLE_API_KEY_P8
+          ./scripts/notarize-pulse.sh
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,5 +93,11 @@ jobs:
       - name: Remove signing material
         if: always()
         run: |
+          python3 - "$RUNNER_TEMP/pulse-search-list.txt" <<'PYTHON'
+          import pathlib, shlex, subprocess, sys
+          saved = pathlib.Path(sys.argv[1])
+          if saved.exists():
+              subprocess.run(['security', 'list-keychains', '-d', 'user', '-s', *shlex.split(saved.read_text())], check=True)
+          PYTHON
           security delete-keychain "$RUNNER_TEMP/pulse.keychain-db" 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/pulse.p12"
+          rm -f "$RUNNER_TEMP/pulse.p12" "$RUNNER_TEMP/pulse-notary.p8" "$RUNNER_TEMP/pulse-search-list.txt"

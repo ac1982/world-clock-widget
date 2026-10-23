@@ -130,12 +130,13 @@ Tag pushes matching `v*` run `.github/workflows/release.yml` on GitHub's Xcode 2
 core checks and XCTest, Pulse signing, Apple notarization, ticket stapling and Gatekeeper assessment,
 then a GitHub Release containing the ZIP and SHA-256 checksum.
 The workflow requires repository secrets `PULSE_CERTIFICATE_P12` (base64-encoded PKCS#12)
-and `PULSE_CERTIFICATE_PASSWORD`, plus `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD`
-for an Apple account with access to the Pulse team. Signing material is imported into a temporary runner keychain
-and deleted after the job. New releases are published only after notarization succeeds. The `v1.0.0` Actions-built app was notarized through the local Xcode account,
-and its release assets were replaced with the notarized package. Cloud notarization requires the two Apple secrets above;
-the local Xcode login is not available on GitHub runners.
+and `PULSE_CERTIFICATE_PASSWORD`, plus the Pulse team API secrets `APPLE_API_KEY_P8`,
+`APPLE_API_KEY_ID`, and `APPLE_API_ISSUER_ID`. Signing material is imported into a temporary
+runner keychain; the original keychain search list is restored and private files are removed after the job.
+New releases are published only after Apple accepts notarization, the ticket is stapled, and Gatekeeper passes.
+The initial `v1.0.0` Actions build was notarized through local Xcode; `v1.0.1` uses cloud notarization.
 
-To notarize a signed ZIP locally, run `./scripts/notarize-pulse.sh` with `NOTARY_KEYCHAIN_PROFILE`,
-or with the Apple ID environment variables above. App Store Connect API keys are also supported via
+To notarize a signed ZIP locally, run `./scripts/notarize-pulse.sh` with `NOTARY_KEYCHAIN_PROFILE`
+and, for a dedicated keychain, `NOTARY_KEYCHAIN_PATH`. API keys are supported via
 `APP_STORE_CONNECT_KEY_PATH`, `APP_STORE_CONNECT_KEY_ID`, and (for team keys) `APP_STORE_CONNECT_ISSUER_ID`.
+See [AGENTS.md](AGENTS.md) for credential locations and release maintenance.
