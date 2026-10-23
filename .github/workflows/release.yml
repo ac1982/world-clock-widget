@@ -10,11 +10,20 @@ concurrency:
 jobs:
   release:
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check notarization credentials
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          test -n "$APPLE_ID" && test -n "$APPLE_APP_SPECIFIC_PASSWORD" || {
+            echo 'Configure APPLE_ID and APPLE_APP_SPECIFIC_PASSWORD repository secrets before publishing.'
+            exit 1
+          }
       - name: Install XcodeGen
         run: brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
       - name: Test
@@ -41,6 +50,11 @@ jobs:
           rm "$RUNNER_TEMP/pulse.p12"
       - name: Build and sign
         run: ./scripts/sign-pulse.sh
+      - name: Notarize and staple
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: ./scripts/notarize-pulse.sh
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -54,7 +68,7 @@ jobs:
 
           Built and tested by GitHub Actions using Xcode 27.1. The app and widget are signed with Pulse's Developer ID Application certificate (team 89G3DBC6CS), with hardened runtime and secure timestamps.
 
-          This release is signed but not notarized. macOS Gatekeeper may require explicit approval on first launch.
+          Apple notarization has passed. The app includes a stapled notarization ticket and has passed Gatekeeper assessment.
 
           Download WorldClock-Pulse.zip, extract it, and place World Clock Widget.app in ~/Applications. Then open it once to register the widget.
           NOTES

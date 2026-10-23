@@ -127,7 +127,15 @@ The signed app is at `build/Pulse.noindex/Build/Products/Release/WorldClock.app`
 Notarization is a separate step before public distribution.
 
 Tag pushes matching `v*` run `.github/workflows/release.yml` on GitHub's Xcode 27 runner:
-core checks and XCTest, Pulse signing, then a GitHub Release containing the ZIP and SHA-256 checksum.
+core checks and XCTest, Pulse signing, Apple notarization, ticket stapling and Gatekeeper assessment,
+then a GitHub Release containing the ZIP and SHA-256 checksum.
 The workflow requires repository secrets `PULSE_CERTIFICATE_P12` (base64-encoded PKCS#12)
-and `PULSE_CERTIFICATE_PASSWORD`. Signing material is imported into a temporary runner keychain
-and deleted after the job. Releases are signed but not notarized.
+and `PULSE_CERTIFICATE_PASSWORD`, plus `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD`
+for an Apple account with access to the Pulse team. Signing material is imported into a temporary runner keychain
+and deleted after the job. New releases are published only after notarization succeeds. The `v1.0.0` Actions-built app was notarized through the local Xcode account,
+and its release assets were replaced with the notarized package. Cloud notarization requires the two Apple secrets above;
+the local Xcode login is not available on GitHub runners.
+
+To notarize a signed ZIP locally, run `./scripts/notarize-pulse.sh` with `NOTARY_KEYCHAIN_PROFILE`,
+or with the Apple ID environment variables above. App Store Connect API keys are also supported via
+`APP_STORE_CONNECT_KEY_PATH`, `APP_STORE_CONNECT_KEY_ID`, and (for team keys) `APP_STORE_CONNECT_ISSUER_ID`.
